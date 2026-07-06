@@ -1,4 +1,4 @@
-import type { CSSProperties, RefObject } from 'react'
+import type { CSSProperties } from 'react'
 import { WORLDS, CURVE_LENGTH, type WorldId } from '../scene/curve'
 import { CONTENT } from '../content/site'
 
@@ -68,16 +68,9 @@ export const JUMP_ANCHOR: Record<WorldId, number> = Object.fromEntries(
 ) as Record<WorldId, number>
 
 /** DOM for one beat — rendered inside a drei <Html> that lives in the 3D scene. */
-export function BeatContent({
-  beat,
-  floaterRef,
-}: {
-  beat: Beat
-  /** ref for an optional element that floats/rises in sync with this beat's own fade */
-  floaterRef?: RefObject<HTMLDivElement | null>
-}) {
+export function BeatContent({ beat }: { beat: Beat }) {
   return beat.kind === 'panel' ? (
-    <GlassPanel intro={beat.intro} accent={beat.accent} floaterRef={floaterRef} />
+    <GlassPanel intro={beat.intro} accent={beat.accent} />
   ) : (
     <ProjectBlock p={beat.project} accent={beat.accent} />
   )
@@ -202,15 +195,7 @@ function ProjectBlock({ p, accent }: { p: ProjectData; accent: string }) {
 }
 
 /** The glass banner: heading, optional paragraphs, optional links. */
-function GlassPanel({
-  intro,
-  accent,
-  floaterRef,
-}: {
-  intro: IntroData
-  accent: string
-  floaterRef?: RefObject<HTMLDivElement | null>
-}) {
+function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
   const panel = (
     <div className={`liquid-glass px-10 py-9 sm:px-12 sm:py-11 ${intro.wide ? 'w-[560px]' : 'w-[460px]'}`}>
       <h1
@@ -258,14 +243,10 @@ function GlassPanel({
       {panel}
       {/* Plain CSS sibling, not a separate 3D object — it shares the exact same
           transform/scale as the panel (both live inside the same beat), so its
-          position relative to the panel can never drift with distance. Only
-          `floaterRef`'s own translateY (driven by the beat's shared opacity)
-          animates the rise/sink. */}
-      <div
-        ref={floaterRef}
-        className="pointer-events-none absolute right-[40px] top-[-240px]"
-        style={{ willChange: 'transform' }}
-      >
+          position relative to the panel can never drift with distance. Fixed
+          in place (no rise/sink motion); opacity cascades from the shared
+          beat wrapper, so it only ever fades in/out with the panel. */}
+      <div className="pointer-events-none absolute right-[40px] top-[-240px]">
         <img
           src={intro.floater}
           alt=""

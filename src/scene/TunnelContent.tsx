@@ -22,18 +22,9 @@ const NEAR_LO = 45 // fully gone (exited past you)
 const _fwd = new THREE.Vector3()
 const _to = new THREE.Vector3()
 
-// The floater's rise is driven by the SAME opacity `o` as its beat, and it's
-// rendered as a plain CSS sibling INSIDE the beat's own Html/group (see
-// GlassPanel in WorldContent.tsx) — not a separate 3D object with its own
-// anchor. That's deliberate: two independent objects drift apart visually as
-// distance/perspective changes; a shared transform can't ever drift.
-const FLOATER_Y_SUNK = 220 // pushed down/behind the panel when hidden
-const FLOATER_Y_RISEN = 0 // its natural CSS-positioned resting spot
-
 function Beat3D({ beat }: { beat: Beat }) {
   const pos = useMemo(() => pointAt(beat.a), [beat.a])
   const ref = useRef<HTMLDivElement>(null)
-  const floaterRef = useRef<HTMLDivElement>(null)
 
   useFrame(({ camera }) => {
     const el = ref.current
@@ -45,19 +36,17 @@ function Beat3D({ beat }: { beat: Beat }) {
     const behind = _to.dot(_fwd) < 0
     // emerge from the fog (far) and blow past the camera (near); no abrupt UI fade
     const o = behind ? 0 : Math.min(smoothstep(FADE_FAR, FADE_MID, d), smoothstep(NEAR_LO, NEAR_HI, d))
+    // opacity cascades to every descendant (including a beat's floater, if any)
+    // automatically — it's one CSS property on the shared wrapper, not per-child.
     el.style.opacity = o.toFixed(3)
     el.style.visibility = o < 0.01 ? 'hidden' : 'visible'
-    if (floaterRef.current) {
-      const y = FLOATER_Y_SUNK + (FLOATER_Y_RISEN - FLOATER_Y_SUNK) * o
-      floaterRef.current.style.transform = `translateY(${y.toFixed(1)}px)`
-    }
   })
 
   return (
     <group position={pos}>
       <Html transform sprite distanceFactor={DIST_FACTOR} center zIndexRange={[10, 0]}>
         <div ref={ref} style={{ opacity: 0, willChange: 'opacity' }}>
-          <BeatContent beat={beat} floaterRef={floaterRef} />
+          <BeatContent beat={beat} />
         </div>
       </Html>
     </group>
