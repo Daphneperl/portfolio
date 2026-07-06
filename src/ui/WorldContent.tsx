@@ -169,7 +169,7 @@ function ProjectBlock({ p, accent }: { p: ProjectData; accent: string }) {
         />
       )}
       <div className="mt-6 flex items-baseline justify-center gap-3">
-        <span className="font-mono text-3xl tracking-tight text-[#f2ecdd]">{p.name}</span>
+        <span className="font-mono text-xl tracking-tight text-[#f2ecdd] sm:text-3xl">{p.name}</span>
         {p.href && (
           <span className="font-mono text-base" style={{ color: accent }}>
             ↗
@@ -177,14 +177,14 @@ function ProjectBlock({ p, accent }: { p: ProjectData; accent: string }) {
         )}
       </div>
       <p
-        className="mx-auto mt-4 max-w-[40rem] text-lg leading-relaxed text-[#e8e0cf]/85"
+        className="mx-auto mt-4 max-w-[40rem] text-sm leading-relaxed text-[#e8e0cf]/85 sm:text-lg"
         style={{ textShadow: '0 1px 14px rgba(0,0,0,0.95)' }}
       >
         {p.blurb}
       </p>
     </>
   )
-  const cls = 'block w-[950px] text-center'
+  const cls = 'block w-[86vw] max-w-[380px] text-center sm:w-[950px] sm:max-w-none'
   return p.href ? (
     <a href={p.href} target="_blank" rel="noreferrer" className={`${cls} transition-opacity hover:opacity-80`}>
       {inner}
@@ -197,9 +197,15 @@ function ProjectBlock({ p, accent }: { p: ProjectData; accent: string }) {
 /** The glass banner: heading, optional paragraphs, optional links. */
 function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
   const panel = (
-    <div className={`liquid-glass px-10 py-9 sm:px-12 sm:py-11 ${intro.wide ? 'w-[560px]' : 'w-[460px]'}`}>
+    <div
+      className={`liquid-glass px-10 py-9 sm:px-12 sm:py-11 ${
+        intro.wide
+          ? 'w-[86vw] max-w-[380px] sm:w-[560px] sm:max-w-none'
+          : 'w-[86vw] max-w-[340px] sm:w-[460px] sm:max-w-none'
+      }`}
+    >
       <h1
-        className="font-serif text-5xl leading-[1.05] text-[#f2ecdd] sm:text-6xl"
+        className="font-serif text-3xl leading-[1.05] text-[#f2ecdd] sm:text-6xl"
         style={{ textShadow: '0 2px 30px rgba(0,0,0,0.6)' }}
       >
         {intro.heading}
@@ -246,11 +252,11 @@ function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
           position relative to the panel can never drift with distance. Fixed
           in place (no rise/sink motion); opacity cascades from the shared
           beat wrapper, so it only ever fades in/out with the panel. */}
-      <div className="pointer-events-none absolute right-[40px] top-[-220px]">
+      <div className="pointer-events-none absolute right-[20px] top-[-140px] sm:right-[40px] sm:top-[-220px]">
         <img
           src={intro.floater}
           alt=""
-          className="edge-fade h-[220px] w-[220px] rounded-2xl object-cover"
+          className="edge-fade h-[140px] w-[140px] rounded-2xl object-cover sm:h-[220px] sm:w-[220px]"
         />
       </div>
     </div>

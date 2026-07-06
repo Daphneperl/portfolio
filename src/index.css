@@ -318,6 +318,52 @@ h1, h2, h3 {
   flex: 1;
 }
 
+/* Mobile: the desktop chrome (menu bar, toolbar) is decorative flourish that
+   can't fit a ~340px-wide window without wrapping/overflowing, so it's
+   dropped; titlebar/address/content/status (the essential "window" identity)
+   shrink instead. Nothing here touches >=640px — desktop is untouched. */
+@media (max-width: 639px) {
+  .retro-menu,
+  .retro-toolbar {
+    display: none;
+  }
+  .retro-window {
+    font-size: 11px;
+  }
+  .retro-titlebar {
+    height: 26px;
+    gap: 6px;
+    padding: 0 8px;
+  }
+  .retro-ico,
+  .retro-fav {
+    width: 14px;
+    height: 14px;
+    font-size: 9px;
+  }
+  .retro-fav {
+    width: 12px;
+    height: 12px;
+    font-size: 8px;
+  }
+  .retro-winbtn {
+    width: 18px;
+    height: 15px;
+    font-size: 9px;
+  }
+  .retro-row {
+    gap: 8px;
+    padding: 4px 8px;
+  }
+  .retro-field {
+    padding: 3px 6px;
+    gap: 5px;
+  }
+  .retro-go {
+    padding: 3px 8px;
+  }
+}
+
 /* ---- Hover: warm glow + gentle float-up (glass panels & chapter buttons) ---- */
 
 /* glass panels need to catch the pointer to be hoverable */

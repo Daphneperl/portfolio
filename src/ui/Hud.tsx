@@ -43,39 +43,42 @@ export function Hud() {
     <div className="pointer-events-none fixed inset-0 z-10 select-none">
       {/* top-left: identity — name/tagline fade out while the "Who I Am" banner
           (which already says this) is on screen, back in once you scroll past
-          it. Email stays put — it's no longer repeated in the banner. */}
-      <div className="absolute left-8 top-8 font-mono text-base tracking-widest text-[#e8e0cf]/80">
+          it. Email stays put — it's no longer repeated in the banner.
+          Mobile-first: smaller text/tighter margin at the base, current
+          desktop sizing restored unchanged at sm: and up. */}
+      <div className="absolute left-4 top-4 max-w-[45vw] font-mono text-sm tracking-widest text-[#e8e0cf]/80 sm:left-8 sm:top-8 sm:max-w-none sm:text-base">
         <div
           className="transition-opacity duration-700 ease-out"
           style={{ opacity: activeId === 'hub' ? 0 : 1 }}
         >
-          <div className="text-xl text-[#e8e0cf]">DAPHNE PERLMAN</div>
-          <div className="text-sm text-[#e8e0cf]/50">designer · dev · artist · Scientist</div>
+          <div className="text-base text-[#e8e0cf] sm:text-xl">DAPHNE PERLMAN</div>
+          <div className="text-xs text-[#e8e0cf]/50 sm:text-sm">designer · dev · artist · Scientist</div>
         </div>
         <a
           href="mailto:tech@citizencafetlv.com"
-          className="hover-glow pointer-events-auto mt-2 inline-block font-mono text-xs tracking-[0.2em] text-[#e8e0cf]/60 uppercase"
+          className="hover-glow pointer-events-auto mt-2 inline-block font-mono text-[10px] tracking-[0.2em] text-[#e8e0cf]/60 uppercase sm:text-xs"
         >
           Email ↗
         </a>
       </div>
 
       {/* top-right: current world */}
-      <div className="absolute right-8 top-8 text-right">
-        <div className="font-mono text-xs tracking-[0.3em] text-[#e8e0cf]/40">
+      <div className="absolute right-4 top-4 max-w-[45vw] text-right sm:right-8 sm:top-8 sm:max-w-none">
+        <div className="font-mono text-[10px] tracking-[0.3em] text-[#e8e0cf]/40 sm:text-xs">
           {active.index} / {String(WORLDS.length - 1).padStart(2, '0')}
         </div>
         <div
-          className="font-mono text-xl tracking-[0.25em] transition-colors"
+          className="font-mono text-sm leading-tight tracking-[0.2em] transition-colors sm:text-xl sm:leading-normal sm:tracking-[0.25em]"
           style={{ color: active.accent }}
         >
           {active.label.toUpperCase()}
         </div>
       </div>
 
-      {/* bottom center: world rail — fixed-width buttons so short ("WHO I AM")
-          and long ("SCIENTIFIC GRAPHICS") labels still space out evenly */}
-      <nav className="pointer-events-auto absolute bottom-8 left-1/2 flex -translate-x-1/2 justify-center gap-10">
+      {/* bottom center: world rail (sm and up) — fixed-width buttons so short
+          ("WHO I AM") and long ("SCIENTIFIC GRAPHICS") labels still space out
+          evenly. Hidden on mobile in favour of the stacked bottom-left rail. */}
+      <nav className="pointer-events-auto absolute bottom-8 left-1/2 hidden -translate-x-1/2 justify-center gap-10 sm:flex">
         {WORLDS.map((w) => {
           const on = w.id === activeId
           return (
@@ -105,8 +108,39 @@ export function Hud() {
         })}
       </nav>
 
+      {/* bottom-left world rail (mobile only) — three stacked rows, each a
+          short tick + the chapter name to its right; allowed to run close to
+          the screen edge rather than wrapping/shrinking to fit. */}
+      <nav className="pointer-events-auto absolute bottom-6 left-4 flex flex-col gap-2.5 sm:hidden">
+        {WORLDS.map((w) => {
+          const on = w.id === activeId
+          return (
+            <button
+              key={w.id}
+              onClick={() => jump(w.id)}
+              className="hover-glow flex items-center gap-2.5"
+              style={{ color: w.accent }}
+            >
+              <span
+                className="h-[3px] w-6 flex-none rounded-full transition-all duration-300"
+                style={{
+                  background: on ? w.accent : 'rgba(232,224,207,0.2)',
+                  boxShadow: on ? `0 0 8px ${w.accent}` : 'none',
+                }}
+              />
+              <span
+                className="whitespace-nowrap font-mono text-[10px] tracking-[0.15em] transition-opacity"
+                style={{ color: w.accent, opacity: on ? 1 : 0.35 }}
+              >
+                {w.label.toUpperCase()}
+              </span>
+            </button>
+          )
+        })}
+      </nav>
+
       {/* right edge: vertical progress */}
-      <div className="absolute right-6 top-1/2 h-40 w-[2px] -translate-y-1/2 bg-[#e8e0cf]/10">
+      <div className="absolute right-4 top-1/2 h-24 w-[2px] -translate-y-1/2 bg-[#e8e0cf]/10 sm:right-6 sm:h-40">
         <div
           className="w-full bg-[#e8e0cf]/70"
           style={{ height: `${progress * 100}%` }}
@@ -115,7 +149,7 @@ export function Hud() {
 
       {/* scroll hint, fades after you start */}
       <div
-        className="absolute bottom-24 left-1/2 -translate-x-1/2 font-mono text-[10px] tracking-[0.3em] text-[#e8e0cf]/50 transition-opacity duration-500"
+        className="absolute bottom-24 left-1/2 -translate-x-1/2 font-mono text-[10px] tracking-[0.3em] text-[#e8e0cf]/50 transition-opacity duration-500 sm:bottom-24"
         style={{ opacity: progress > 0.01 ? 0 : 1 }}
       >
         SCROLL TO TRAVEL ↓
