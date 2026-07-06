@@ -59,8 +59,8 @@ const FLOATER_T_OFFSET = 0.01
 // (shifted up clear of the panel's top edge entirely — it should read as
 // peeking from behind the top-right corner, never overlapping the text).
 const FLOATER_Y_SUNK = 120
-const FLOATER_Y_RISEN = -260
-const FLOATER_X = 260 // fixed rightward shift — sits at the top-right corner
+const FLOATER_Y_RISEN = -450
+const FLOATER_X = 165 // fixed rightward shift — top-right, but not hugging the edge
 
 /** The portrait that floats up from behind the hub banner as you approach it,
  * and sinks back down while fading out as you pass — tied to the exact same
@@ -90,7 +90,7 @@ function HubFloater() {
           <img
             src="/floating-daph.png"
             alt=""
-            className="edge-fade h-[190px] w-[190px] rounded-2xl object-cover"
+            className="edge-fade h-[300px] w-[300px] rounded-2xl object-cover"
           />
         </div>
       </Html>
