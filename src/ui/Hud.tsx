@@ -32,8 +32,12 @@ export function Hud() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-10 select-none">
-      {/* top-left: identity */}
-      <div className="absolute left-8 top-8 font-mono text-base tracking-widest text-[#e8e0cf]/80">
+      {/* top-left: identity — fades out while the "Who I Am" banner (which
+          already says this) is on screen, back in once you scroll past it */}
+      <div
+        className="absolute left-8 top-8 font-mono text-base tracking-widest text-[#e8e0cf]/80 transition-opacity duration-700 ease-out"
+        style={{ opacity: activeId === 'hub' ? 0 : 1 }}
+      >
         <div className="text-xl text-[#e8e0cf]">DAPHNE PERLMAN</div>
         <div className="text-sm text-[#e8e0cf]/50">designer · dev · artist · biologist</div>
       </div>
