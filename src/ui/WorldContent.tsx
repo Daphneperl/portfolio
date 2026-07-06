@@ -197,7 +197,7 @@ function ProjectBlock({ p, accent }: { p: ProjectData; accent: string }) {
 /** The glass banner: heading, optional paragraphs, optional links. */
 function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
   return (
-    <div className="liquid-glass w-[460px] px-10 py-9 sm:px-12 sm:py-11">
+    <div className={`liquid-glass px-10 py-9 sm:px-12 sm:py-11 ${intro.wide ? 'w-[560px]' : 'w-[460px]'}`}>
       <h1
         className="font-serif text-5xl leading-[1.05] text-[#f2ecdd] sm:text-6xl"
         style={{ textShadow: '0 2px 30px rgba(0,0,0,0.6)' }}
