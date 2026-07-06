@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { pointAt } from './curve'
-import { BEATS, BeatContent, type Beat } from '../ui/WorldContent'
+import { BEATS, BeatContent, BANNER_ANCHOR, type Beat } from '../ui/WorldContent'
 
 const smoothstep = (a: number, b: number, x: number) => {
   const t = Math.max(0, Math.min(1, (x - a) / (b - a)))
@@ -51,6 +51,53 @@ function Beat3D({ beat }: { beat: Beat }) {
   )
 }
 
+// Sits a touch deeper in the tunnel than the "Who I Am" banner itself, so it's
+// consistently a bit farther from the camera — reads as BEHIND the banner both
+// in perspective (smaller/further) and in DOM stacking (lower zIndexRange).
+const FLOATER_T_OFFSET = 0.01
+// Vertical travel: fully sunk (hidden low, behind/below the panel) -> risen
+// (shifted up clear of the panel's top edge entirely — it should read as
+// peeking from behind the top-right corner, never overlapping the text).
+const FLOATER_Y_SUNK = 120
+const FLOATER_Y_RISEN = -260
+const FLOATER_X = 260 // fixed rightward shift — sits at the top-right corner
+
+/** The portrait that floats up from behind the hub banner as you approach it,
+ * and sinks back down while fading out as you pass — tied to the exact same
+ * distance-based opacity curve as the banner, so the two move in lockstep. */
+function HubFloater() {
+  const pos = useMemo(() => pointAt(BANNER_ANCHOR.hub + FLOATER_T_OFFSET), [])
+  const ref = useRef<HTMLDivElement>(null)
+
+  useFrame(({ camera }) => {
+    const el = ref.current
+    if (!el) return
+    const d = camera.position.distanceTo(pos)
+    _to.copy(pos).sub(camera.position)
+    camera.getWorldDirection(_fwd)
+    const behind = _to.dot(_fwd) < 0
+    const o = behind ? 0 : Math.min(smoothstep(FADE_FAR, FADE_MID, d), smoothstep(NEAR_LO, NEAR_HI, d))
+    el.style.opacity = o.toFixed(3)
+    el.style.visibility = o < 0.01 ? 'hidden' : 'visible'
+    const y = FLOATER_Y_SUNK + (FLOATER_Y_RISEN - FLOATER_Y_SUNK) * o
+    el.style.transform = `translate(${FLOATER_X}px, ${y.toFixed(1)}px)`
+  })
+
+  return (
+    <group position={pos}>
+      <Html transform sprite distanceFactor={DIST_FACTOR} center zIndexRange={[5, 0]}>
+        <div ref={ref} style={{ opacity: 0, willChange: 'opacity, transform' }}>
+          <img
+            src="/floating-daph.png"
+            alt=""
+            className="edge-fade h-[190px] w-[190px] rounded-2xl object-cover"
+          />
+        </div>
+      </Html>
+    </group>
+  )
+}
+
 /** All the site content, living inside the 3D tunnel on the curve centreline. */
 export function TunnelContent() {
   return (
@@ -58,6 +105,7 @@ export function TunnelContent() {
       {BEATS.map((b) => (
         <Beat3D key={b.key} beat={b} />
       ))}
+      <HubFloater />
     </>
   )
 }
