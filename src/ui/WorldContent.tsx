@@ -196,8 +196,8 @@ function ProjectBlock({ p, accent }: { p: ProjectData; accent: string }) {
 
 /** The glass banner: heading, optional paragraphs, optional links. */
 function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
-  const text = (
-    <>
+  return (
+    <div className="liquid-glass w-[460px] px-10 py-9 sm:px-12 sm:py-11">
       <h1
         className="font-serif text-5xl leading-[1.05] text-[#f2ecdd] sm:text-6xl"
         style={{ textShadow: '0 2px 30px rgba(0,0,0,0.6)' }}
@@ -233,31 +233,6 @@ function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
           ))}
         </div>
       )}
-    </>
-  )
-
-  if (!intro.portrait) {
-    return <div className="liquid-glass w-[460px] px-10 py-9 sm:px-12 sm:py-11">{text}</div>
-  }
-
-  return (
-    <div className="liquid-glass flex w-[820px] items-center gap-10 px-10 py-9 sm:px-12 sm:py-11">
-      <div className="min-w-0 flex-1">{text}</div>
-      {/* Filter is on the img ITSELF (not an ancestor) — punches up contrast/
-          saturation and pulls brightness down a touch so it doesn't read
-          faded/washed-out next to the high-contrast CRT UI. The beat's shared
-          fade (on the whole panel's wrapper) is still the only thing that
-          ever touches its visibility/opacity. */}
-      <img
-        src={intro.portrait}
-        alt={intro.heading}
-        className="h-[300px] w-[225px] flex-none rounded-2xl object-cover"
-        style={{
-          border: '1px solid rgba(102, 255, 156, 0.2)',
-          filter: 'contrast(1.65) saturate(1.6) brightness(0.72)',
-          boxShadow: 'inset 0 0 50px rgba(0,0,0,0.5)',
-        }}
-      />
     </div>
   )
 }
