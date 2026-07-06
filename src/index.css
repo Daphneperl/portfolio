@@ -324,14 +324,14 @@ h1, h2, h3 {
 .liquid-glass {
   pointer-events: auto;
   transition:
-    box-shadow 0.9s ease,
-    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow 1.8s ease,
+    transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .liquid-glass:hover {
   transform: translateY(-3px);
   box-shadow:
-    0 0 24px rgba(232, 98, 42, 0.22),
-    0 0 60px rgba(232, 98, 42, 0.12),
+    0 0 40px rgba(232, 98, 42, 0.34),
+    0 0 100px rgba(232, 98, 42, 0.2),
     0 24px 64px rgba(0, 0, 0, 0.45),
     inset 0 1px 1px rgba(255, 255, 255, 0.72),
     inset 0 -10px 24px rgba(0, 0, 0, 0.18),
@@ -341,12 +341,34 @@ h1, h2, h3 {
 /* reusable glow + gentle lift for non-glass elements (chapter buttons); glows in currentColor */
 .hover-glow {
   transition:
-    filter 0.7s ease,
-    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    filter 1.6s ease,
+    transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .hover-glow:hover {
   transform: translateY(-2px);
-  filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 11px currentColor);
+  filter:
+    drop-shadow(0 0 8px currentColor) drop-shadow(0 0 20px currentColor) drop-shadow(0 0 40px currentColor);
+}
+
+/* Ambient glow trailing the real cursor — the exact same glow recipe as
+   .hover-glow:hover (same drop-shadow radii, same slow fade), so the cursor
+   itself reads as part of the CRT system. Tints to the active section's accent
+   (see CursorGlow.tsx), always on rather than hover-triggered. */
+.cursor-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  color: var(--glow-color, #66ff9c);
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 1.6s ease;
+  filter:
+    drop-shadow(0 0 8px currentColor) drop-shadow(0 0 20px currentColor) drop-shadow(0 0 40px currentColor);
 }
 @keyframes glass-sheen {
   0%,
