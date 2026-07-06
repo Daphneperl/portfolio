@@ -21,44 +21,17 @@ const NEAR_LO = 45 // fully gone (exited past you)
 
 const _fwd = new THREE.Vector3()
 const _to = new THREE.Vector3()
-const _viewSpace = new THREE.Vector3()
-const _right = new THREE.Vector3()
-const _corrected = new THREE.Vector3()
-
-// Below this canvas width, actively cancel a beat's lateral (left/right) drift
-// from screen-centre every frame (see the useFrame below). The tunnel curves,
-// so a beat further along it is naturally a little off the camera's exact
-// viewing axis — desktop's WIDE aspect ratio makes that a small fraction of
-// screen width (barely visible, and it's part of the intended "converges as
-// you approach" feel). A narrow PORTRAIT phone screen makes the same offset a
-// much bigger fraction of the width, reading as "not centered." Scoped to
-// mobile only so desktop's established behaviour is untouched.
-const MOBILE_BREAKPOINT = 640
 
 function Beat3D({ beat }: { beat: Beat }) {
   const pos = useMemo(() => pointAt(beat.a), [beat.a])
   const ref = useRef<HTMLDivElement>(null)
-  const groupRef = useRef<THREE.Group>(null)
 
-  useFrame(({ camera, size }) => {
+  useFrame(({ camera }) => {
     const el = ref.current
-    const grp = groupRef.current
-    if (!el || !grp) return
-
-    if (size.width < MOBILE_BREAKPOINT) {
-      // cancel the anchor's view-space X (its lateral offset from the
-      // camera's straight-ahead axis) so it always projects to screen-centre
-      _viewSpace.copy(pos).applyMatrix4(camera.matrixWorldInverse)
-      _right.setFromMatrixColumn(camera.matrixWorld, 0).normalize()
-      _corrected.copy(pos).addScaledVector(_right, -_viewSpace.x)
-      grp.position.copy(_corrected)
-    } else {
-      grp.position.copy(pos)
-    }
-
-    const d = camera.position.distanceTo(grp.position)
+    if (!el) return
+    const d = camera.position.distanceTo(pos)
     // hide anything behind the camera (already flew past)
-    _to.copy(grp.position).sub(camera.position)
+    _to.copy(pos).sub(camera.position)
     camera.getWorldDirection(_fwd)
     const behind = _to.dot(_fwd) < 0
     // emerge from the fog (far) and blow past the camera (near); no abrupt UI fade
@@ -70,7 +43,7 @@ function Beat3D({ beat }: { beat: Beat }) {
   })
 
   return (
-    <group ref={groupRef} position={pos}>
+    <group position={pos}>
       <Html transform sprite distanceFactor={DIST_FACTOR} center zIndexRange={[10, 0]}>
         <div ref={ref} style={{ opacity: 0, willChange: 'opacity' }}>
           <BeatContent beat={beat} />
