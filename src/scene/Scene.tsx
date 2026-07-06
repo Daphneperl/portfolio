@@ -52,6 +52,8 @@ function Background() {
   const { scene } = useThree()
   tex.colorSpace = THREE.SRGBColorSpace
   scene.background = tex
-  scene.backgroundIntensity = 0.5
+  // CRT pivot: the mottled image fought the grid + accent. Dim it hard so it reads
+  // as a faint organic culture behind the phosphor void, not a loud field.
+  scene.backgroundIntensity = 0.16
   return null
 }

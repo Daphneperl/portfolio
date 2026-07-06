@@ -52,8 +52,8 @@ export interface World {
  */
 export const WORLDS: World[] = [
   { id: 'hub', label: 'Who I Am', index: '00', range: [0.0, 0.14], accent: '#ece3cf' },
-  { id: 'web', label: 'Web Design & Dev', index: '01', range: [0.14, 0.72], accent: '#e8622a' },
-  { id: 'sci', label: 'Scientific Graphics', index: '02', range: [0.72, 1.0], accent: '#83b23f' },
+  { id: 'web', label: 'Web Design & Dev', index: '01', range: [0.14, 0.72], accent: '#ff9d3c' },
+  { id: 'sci', label: 'Scientific Graphics', index: '02', range: [0.72, 1.0], accent: '#66ff9c' },
 ]
 
 /** Which world is active for a given global progress (0..1). */
