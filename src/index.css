@@ -72,24 +72,24 @@ h1, h2, h3 {
      backdrop-filter stays as a light frost for browsers/contexts that honour it. */
   background:
     /* phosphor scanlines — the screen is drawn line by line */
-    repeating-linear-gradient(0deg, rgba(102, 255, 156, 0.05) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+    repeating-linear-gradient(0deg, rgba(157, 255, 102, 0.05) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
     /* soft screen sheen */
-    linear-gradient(135deg, rgba(102, 255, 156, 0.07), rgba(255, 255, 255, 0.02) 45%, rgba(255, 255, 255, 0) 62%),
+    linear-gradient(135deg, rgba(157, 255, 102, 0.07), rgba(255, 255, 255, 0.02) 45%, rgba(255, 255, 255, 0) 62%),
     /* dark green-black glass body — keeps text readable over the grid */
     linear-gradient(180deg, rgba(8, 20, 13, 0.62), rgba(4, 10, 7, 0.72));
   -webkit-backdrop-filter: blur(6px) saturate(1.5);
   backdrop-filter: blur(6px) saturate(1.5);
-  border: 1px solid rgba(102, 255, 156, 0.16);
+  border: 1px solid rgba(157, 255, 102, 0.16);
   border-radius: 28px;
   box-shadow:
     /* soft cast shadow — grounds the pane */
     0 12px 44px rgba(0, 0, 0, 0.5),
     /* outer phosphor bloom — the screen is lit */
-    0 0 32px rgba(102, 255, 156, 0.1),
+    0 0 32px rgba(157, 255, 102, 0.1),
     /* green top rim + dark bottom shade = screen-glass thickness */
-    inset 0 1px 1px rgba(102, 255, 156, 0.35),
+    inset 0 1px 1px rgba(157, 255, 102, 0.35),
     inset 0 -10px 24px rgba(0, 0, 0, 0.3),
-    inset 0 0 26px rgba(102, 255, 156, 0.05);
+    inset 0 0 26px rgba(157, 255, 102, 0.05);
   overflow: hidden;
 }
 /* edge lensing — a masked gradient border, bright where light hits, dark opposite */
@@ -159,14 +159,14 @@ h1, h2, h3 {
    banners instead of a beige Windows-98 window. --rw-accent ties the titlebar
    glow + Go button to the section's one accent color (amber for web, etc). */
 .retro-window {
-  --rw-accent: #66ff9c;
+  --rw-accent: #9dff66;
   width: 100%;
   border-radius: 24px;
   overflow: hidden;
   background:
-    repeating-linear-gradient(0deg, rgba(102, 255, 156, 0.05) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+    repeating-linear-gradient(0deg, rgba(157, 255, 102, 0.05) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
     linear-gradient(180deg, rgba(8, 20, 13, 0.7), rgba(4, 10, 7, 0.82));
-  border: 1px solid rgba(102, 255, 156, 0.16);
+  border: 1px solid rgba(157, 255, 102, 0.16);
   color: #cfe6d6;
   font-family: var(--font-mono);
   font-size: 19px;
@@ -176,8 +176,8 @@ h1, h2, h3 {
   user-select: none;
   box-shadow:
     0 12px 44px rgba(0, 0, 0, 0.5),
-    0 0 28px rgba(102, 255, 156, 0.08),
-    inset 0 1px 1px rgba(102, 255, 156, 0.3),
+    0 0 28px rgba(157, 255, 102, 0.08),
+    inset 0 1px 1px rgba(157, 255, 102, 0.3),
     inset 0 -10px 24px rgba(0, 0, 0, 0.3);
 }
 .retro-titlebar {
@@ -186,8 +186,8 @@ h1, h2, h3 {
   gap: 10px;
   height: 40px;
   padding: 0 14px;
-  background: linear-gradient(180deg, rgba(102, 255, 156, 0.1), rgba(102, 255, 156, 0.02));
-  border-bottom: 1px solid rgba(102, 255, 156, 0.18);
+  background: linear-gradient(180deg, rgba(157, 255, 102, 0.1), rgba(157, 255, 102, 0.02));
+  border-bottom: 1px solid rgba(157, 255, 102, 0.18);
   color: var(--rw-accent);
 }
 .retro-ico,
@@ -229,7 +229,7 @@ h1, h2, h3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(102, 255, 156, 0.25);
+  border: 1px solid rgba(157, 255, 102, 0.25);
   border-radius: 5px;
   color: rgba(207, 230, 214, 0.7);
   font-size: 15px;
@@ -240,12 +240,12 @@ h1, h2, h3 {
   gap: 16px;
   padding: 6px 14px;
   color: rgba(207, 230, 214, 0.55);
-  border-bottom: 1px solid rgba(102, 255, 156, 0.08);
+  border-bottom: 1px solid rgba(157, 255, 102, 0.08);
   white-space: nowrap;
 }
 .retro-menu u {
   text-decoration: underline;
-  text-decoration-color: rgba(102, 255, 156, 0.4);
+  text-decoration-color: rgba(157, 255, 102, 0.4);
 }
 .retro-toolbar {
   gap: 16px;
@@ -255,7 +255,7 @@ h1, h2, h3 {
   width: 1px;
   align-self: stretch;
   margin: 1px 4px;
-  background: rgba(102, 255, 156, 0.15);
+  background: rgba(157, 255, 102, 0.15);
 }
 .retro-address {
   gap: 10px;
@@ -271,7 +271,7 @@ h1, h2, h3 {
   gap: 9px;
   padding: 5px 10px;
   background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(102, 255, 156, 0.14);
+  border: 1px solid rgba(157, 255, 102, 0.14);
   border-radius: 6px;
 }
 .retro-url {
@@ -285,7 +285,7 @@ h1, h2, h3 {
   align-items: center;
   gap: 5px;
   padding: 5px 15px;
-  border: 1px solid rgba(102, 255, 156, 0.25);
+  border: 1px solid rgba(157, 255, 102, 0.25);
   border-radius: 6px;
   color: var(--rw-accent);
 }
@@ -293,7 +293,7 @@ h1, h2, h3 {
   aspect-ratio: 4 / 3;
   overflow: hidden;
   background: #000;
-  border-top: 1px solid rgba(102, 255, 156, 0.1);
+  border-top: 1px solid rgba(157, 255, 102, 0.1);
 }
 .retro-content img {
   display: block;
@@ -305,7 +305,7 @@ h1, h2, h3 {
   display: flex;
   gap: 1px;
   padding: 3px 4px;
-  border-top: 1px solid rgba(102, 255, 156, 0.1);
+  border-top: 1px solid rgba(157, 255, 102, 0.1);
 }
 .retro-status-cell {
   display: flex;

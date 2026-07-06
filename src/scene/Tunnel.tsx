@@ -3,11 +3,11 @@ import * as THREE from 'three'
 import { tunnelCurve, TUNNEL_RADIUS } from './curve'
 
 // old-computer phosphor green — hot enough (toneMapped off) to blow out into bloom
-const PHOSPHOR = '#66ff9c'
+const PHOSPHOR = '#9dff66'
 
 // grid always sits at this low, "in-the-zone" opacity — no brightening at transitions
-const MERIDIAN_OPACITY = 0.1
-const RING_OPACITY = 0.06
+const MERIDIAN_OPACITY = 0.16
+const RING_OPACITY = 0.1
 
 // Grid resolution
 const LENGTH_SEGMENTS = 520 // stations along the spine
