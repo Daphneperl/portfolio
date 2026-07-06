@@ -246,7 +246,7 @@ function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
           position relative to the panel can never drift with distance. Fixed
           in place (no rise/sink motion); opacity cascades from the shared
           beat wrapper, so it only ever fades in/out with the panel. */}
-      <div className="pointer-events-none absolute right-[40px] top-[-190px]">
+      <div className="pointer-events-none absolute right-[40px] top-[-220px]">
         <img
           src={intro.floater}
           alt=""
