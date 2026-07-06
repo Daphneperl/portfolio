@@ -22,8 +22,8 @@
 /* ---- Base ---- */
 html {
   scroll-behavior: smooth;
-  /* custom star cursor (128px, hotspot on the orange sparkle) */
-  cursor: url('/cursor.png') 14 12, auto;
+  /* custom star cursor (128px, orange hover-glow baked in, hotspot on the sparkle) */
+  cursor: url('/cursor.png') 26 24, auto;
 }
 a,
 button,
@@ -31,7 +31,7 @@ button,
 label,
 .liquid-glass,
 .retro-window {
-  cursor: url('/cursor.png') 14 12, pointer;
+  cursor: url('/cursor.png') 26 24, pointer;
 }
 
 body {
