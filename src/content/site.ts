@@ -46,12 +46,6 @@ export const CONTENT: Record<WorldId, WorldContent> = {
         'A designer, developer, artist and scientist. I love building things, using modern tools to create environments, nostalgic worlds, and help turn complex technical endeavors into captivating visual stories.',
         'Scroll to travel through my world...',
       ],
-      links: [
-        { label: 'Email', href: 'mailto:tech@citizencafetlv.com' },
-        // Add more when you want, e.g.:
-        // { label: 'Instagram', href: 'https://instagram.com/...' },
-        // { label: 'GitHub', href: 'https://github.com/...' },
-      ],
     },
   },
 

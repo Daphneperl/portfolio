@@ -32,14 +32,23 @@ export function Hud() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-10 select-none">
-      {/* top-left: identity — fades out while the "Who I Am" banner (which
-          already says this) is on screen, back in once you scroll past it */}
-      <div
-        className="absolute left-8 top-8 font-mono text-base tracking-widest text-[#e8e0cf]/80 transition-opacity duration-700 ease-out"
-        style={{ opacity: activeId === 'hub' ? 0 : 1 }}
-      >
-        <div className="text-xl text-[#e8e0cf]">DAPHNE PERLMAN</div>
-        <div className="text-sm text-[#e8e0cf]/50">designer · dev · artist · biologist</div>
+      {/* top-left: identity — name/tagline fade out while the "Who I Am" banner
+          (which already says this) is on screen, back in once you scroll past
+          it. Email stays put — it's no longer repeated in the banner. */}
+      <div className="absolute left-8 top-8 font-mono text-base tracking-widest text-[#e8e0cf]/80">
+        <div
+          className="transition-opacity duration-700 ease-out"
+          style={{ opacity: activeId === 'hub' ? 0 : 1 }}
+        >
+          <div className="text-xl text-[#e8e0cf]">DAPHNE PERLMAN</div>
+          <div className="text-sm text-[#e8e0cf]/50">designer · dev · artist · Scientist</div>
+        </div>
+        <a
+          href="mailto:tech@citizencafetlv.com"
+          className="hover-glow pointer-events-auto mt-2 inline-block font-mono text-xs tracking-[0.2em] text-[#e8e0cf]/60 uppercase"
+        >
+          Email ↗
+        </a>
       </div>
 
       {/* top-right: current world */}
