@@ -1,0 +1,375 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+/* ---- Design tokens (Tailwind v4 @theme) ---- */
+@theme {
+  /* warm, wet, psychedelic-scientific — pulled from the moodboard collage */
+  --color-bg: #0d1712;
+  --color-bg-soft: #14211a;
+  --color-surface: #1b2a20;
+  --color-border: #2f3d2e;
+  --color-text: #cbc2a8;
+  --color-heading: #f2ecdd;
+  --color-accent: #e8622a; /* persimmon / rust */
+  --color-accent-2: #9bb03e; /* kelp green */
+  --color-accent-3: #9b6bd6; /* iridescent purple */
+
+  --font-sans: 'Space Grotesk', system-ui, sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ---- Base ---- */
+html {
+  scroll-behavior: smooth;
+  /* custom star cursor (128px, hotspot on the orange sparkle) */
+  cursor: url('/cursor.png') 14 12, auto;
+}
+a,
+button,
+[role='button'],
+label,
+.liquid-glass,
+.retro-window {
+  cursor: url('/cursor.png') 14 12, pointer;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+h1, h2, h3 {
+  color: var(--color-heading);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #08080b;
+}
+
+/* ---- Liquid glass (web translation of iOS 26 Liquid Glass) ----
+   Real backdrop blur + saturation samples the live 3D tunnel behind the panel;
+   the layered inset highlights give the bright refractive rim and specular sheen. */
+.liquid-glass {
+  position: relative;
+  isolation: isolate;
+  /* Opacity is set per-frame in JS on the glass element ITSELF (not an ancestor),
+     which keeps backdrop-filter alive so the blur fades smoothly with the panel. */
+  /* Lives in the 3D scene (CSS3D) where backdrop-filter can't sample the WebGL
+     tunnel, so the glass is a translucent smoky fill: top-lit sheen + warm tint
+     over a dark, semi-opaque body that keeps the text readable over the grid.
+     backdrop-filter stays as a light frost for browsers/contexts that honour it. */
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03) 45%, rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, rgba(28, 20, 15, 0.5), rgba(14, 10, 8, 0.62));
+  -webkit-backdrop-filter: blur(6px) saturate(1.5);
+  backdrop-filter: blur(6px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  box-shadow:
+    /* soft cast shadow — grounds the pane */
+    0 10px 40px rgba(0, 0, 0, 0.38),
+    /* bright top rim (specular) + dark bottom shade = glass thickness */
+    inset 0 1px 1px rgba(255, 255, 255, 0.6),
+    inset 0 -10px 24px rgba(0, 0, 0, 0.16),
+    inset 0 0 22px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+/* edge lensing — a masked gradient border, bright where light hits, dark opposite */
+.liquid-glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.7),
+    rgba(255, 255, 255, 0.06) 28%,
+    rgba(255, 255, 255, 0) 55%,
+    rgba(255, 255, 255, 0.22)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+/* moving specular sheen — the "liquid" light sliding across the surface */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.06) 46%,
+    rgba(255, 255, 255, 0.02) 54%,
+    transparent 70%
+  );
+  background-size: 220% 220%;
+  animation: glass-sheen 22s ease-in-out infinite;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  z-index: 0;
+}
+/* keep real content above the sheen layer */
+.liquid-glass > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Edge-fade: feather all four edges of an image to transparent ---- */
+.edge-fade {
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 16%, #000 84%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 16%, #000 84%, transparent 100%);
+  mask-composite: intersect;
+}
+
+/* ---- Retro IE / Windows 2000 window chrome (project "browser" windows) ---- */
+.retro-window {
+  --silver: #c0c0c0;
+  width: 100%;
+  padding: 3px;
+  background: var(--silver);
+  color: #000;
+  font-family: 'Tahoma', 'Geneva', 'Verdana', sans-serif;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: left;
+  user-select: none;
+  box-shadow:
+    inset -1px -1px #0a0a0a,
+    inset 1px 1px #fff,
+    inset -2px -2px #808080,
+    inset 2px 2px #dfdfdf;
+}
+.retro-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 2px;
+  background: linear-gradient(90deg, #0a246a, #3a6ea5 55%, #7aa9dd);
+  color: #fff;
+}
+.retro-ico,
+.retro-fav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  background: #fff;
+  color: #1a52d6;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 11px;
+}
+.retro-fav {
+  width: 14px;
+  height: 14px;
+  font-size: 10px;
+}
+.retro-title-text {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.retro-winbtns {
+  display: flex;
+  gap: 2px;
+}
+.retro-winbtn {
+  width: 16px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--silver);
+  color: #000;
+  font-size: 9px;
+  box-shadow:
+    inset -1px -1px #0a0a0a,
+    inset 1px 1px #fff,
+    inset -2px -2px #808080,
+    inset 2px 2px #dfdfdf;
+}
+.retro-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+.retro-menu u {
+  text-decoration: underline;
+}
+.retro-toolbar {
+  gap: 8px;
+  color: #202020;
+}
+.retro-sep {
+  width: 2px;
+  align-self: stretch;
+  margin: 2px 1px;
+  box-shadow:
+    inset 1px 0 #808080,
+    inset -1px 0 #fff;
+}
+.retro-address {
+  gap: 5px;
+}
+.retro-address-label {
+  color: #404040;
+}
+.retro-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 3px;
+  background: #fff;
+  box-shadow:
+    inset -1px -1px #fff,
+    inset 1px 1px #808080,
+    inset -2px -2px #dfdfdf,
+    inset 2px 2px #0a0a0a;
+}
+.retro-url {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.retro-go {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  background: var(--silver);
+  box-shadow:
+    inset -1px -1px #0a0a0a,
+    inset 1px 1px #fff,
+    inset -2px -2px #808080,
+    inset 2px 2px #dfdfdf;
+}
+.retro-content {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #000;
+  box-shadow:
+    inset -1px -1px #fff,
+    inset 1px 1px #808080,
+    inset -2px -2px #dfdfdf,
+    inset 2px 2px #0a0a0a;
+}
+.retro-content img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.retro-status {
+  display: flex;
+  gap: 3px;
+  margin-top: 3px;
+}
+.retro-status-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  box-shadow:
+    inset -1px -1px #fff,
+    inset 1px 1px #808080;
+}
+.retro-status-cell:first-child {
+  flex: 1;
+}
+
+/* ---- Hover: warm glow + gentle float-up (glass panels & chapter buttons) ---- */
+
+/* glass panels need to catch the pointer to be hoverable */
+.liquid-glass {
+  pointer-events: auto;
+  transition:
+    box-shadow 0.9s ease,
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.liquid-glass:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 24px rgba(232, 98, 42, 0.22),
+    0 0 60px rgba(232, 98, 42, 0.12),
+    0 24px 64px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px rgba(255, 255, 255, 0.72),
+    inset 0 -10px 24px rgba(0, 0, 0, 0.18),
+    inset 0 0 22px rgba(255, 255, 255, 0.06);
+}
+
+/* reusable glow + gentle lift for non-glass elements (chapter buttons); glows in currentColor */
+.hover-glow {
+  transition:
+    filter 0.7s ease,
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hover-glow:hover {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 11px currentColor);
+}
+@keyframes glass-sheen {
+  0%,
+  100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+}
+
+/* subtle animated grain/glow helpers */
+.text-gradient {
+  background: linear-gradient(120deg, var(--color-heading), var(--color-accent-2), var(--color-accent-3));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 8s linear infinite;
+}
+
+@keyframes shine {
+  to { background-position: 200% center; }
+}
+
+/* thin custom scrollbar */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--color-bg); }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent-2); }
