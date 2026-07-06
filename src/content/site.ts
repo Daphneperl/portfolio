@@ -43,9 +43,8 @@ export const CONTENT: Record<WorldId, WorldContent> = {
       wide: true,
       floater: '/floating-daph.png',
       lines: [
-        'Designer, developer, artist and biologist. I move between all four and let each one leak into the others.',
-        'I build things that are equal parts rigorous and playful: interfaces, scientific visuals, and drawings made by hand.',
-        'Scroll to travel through the work.',
+        'A designer, developer, artist and scientist. I love building things, using modern tools to create environments, nostalgic worlds, and help turn complex technical endeavors into captivating visual stories.',
+        'Scroll to travel through my world...',
       ],
       links: [
         { label: 'Email', href: 'mailto:tech@citizencafetlv.com' },
