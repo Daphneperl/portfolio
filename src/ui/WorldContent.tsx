@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, RefObject } from 'react'
 import { WORLDS, CURVE_LENGTH, type WorldId } from '../scene/curve'
 import { CONTENT } from '../content/site'
 
@@ -68,9 +68,16 @@ export const JUMP_ANCHOR: Record<WorldId, number> = Object.fromEntries(
 ) as Record<WorldId, number>
 
 /** DOM for one beat — rendered inside a drei <Html> that lives in the 3D scene. */
-export function BeatContent({ beat }: { beat: Beat }) {
+export function BeatContent({
+  beat,
+  floaterRef,
+}: {
+  beat: Beat
+  /** ref for an optional element that floats/rises in sync with this beat's own fade */
+  floaterRef?: RefObject<HTMLDivElement | null>
+}) {
   return beat.kind === 'panel' ? (
-    <GlassPanel intro={beat.intro} accent={beat.accent} />
+    <GlassPanel intro={beat.intro} accent={beat.accent} floaterRef={floaterRef} />
   ) : (
     <ProjectBlock p={beat.project} accent={beat.accent} />
   )
@@ -195,8 +202,16 @@ function ProjectBlock({ p, accent }: { p: ProjectData; accent: string }) {
 }
 
 /** The glass banner: heading, optional paragraphs, optional links. */
-function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
-  return (
+function GlassPanel({
+  intro,
+  accent,
+  floaterRef,
+}: {
+  intro: IntroData
+  accent: string
+  floaterRef?: RefObject<HTMLDivElement | null>
+}) {
+  const panel = (
     <div className={`liquid-glass px-10 py-9 sm:px-12 sm:py-11 ${intro.wide ? 'w-[560px]' : 'w-[460px]'}`}>
       <h1
         className="font-serif text-5xl leading-[1.05] text-[#f2ecdd] sm:text-6xl"
@@ -233,6 +248,30 @@ function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
           ))}
         </div>
       )}
+    </div>
+  )
+
+  if (!intro.floater) return panel
+
+  return (
+    <div className="relative">
+      {panel}
+      {/* Plain CSS sibling, not a separate 3D object — it shares the exact same
+          transform/scale as the panel (both live inside the same beat), so its
+          position relative to the panel can never drift with distance. Only
+          `floaterRef`'s own translateY (driven by the beat's shared opacity)
+          animates the rise/sink. */}
+      <div
+        ref={floaterRef}
+        className="pointer-events-none absolute right-[40px] top-[-240px]"
+        style={{ willChange: 'transform' }}
+      >
+        <img
+          src={intro.floater}
+          alt=""
+          className="edge-fade h-[220px] w-[220px] rounded-2xl object-cover"
+        />
+      </div>
     </div>
   )
 }

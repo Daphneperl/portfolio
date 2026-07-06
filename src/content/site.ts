@@ -20,6 +20,8 @@ export interface WorldContent {
     links?: Link[]
     /** widen the glass banner a bit beyond the default 460px */
     wide?: boolean
+    /** image that floats/rises up from behind the panel (top-right), in sync with its fade */
+    floater?: string
     /** projects shown (outside the glass) a few scrolls behind the banner */
     projects?: {
       name: string
@@ -39,6 +41,7 @@ export const CONTENT: Record<WorldId, WorldContent> = {
     intro: {
       heading: 'Daphne Perlman',
       wide: true,
+      floater: '/floating-daph.png',
       lines: [
         'Designer, developer, artist and biologist. I move between all four and let each one leak into the others.',
         'I build things that are equal parts rigorous and playful: interfaces, scientific visuals, and drawings made by hand.',
