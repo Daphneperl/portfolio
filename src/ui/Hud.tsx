@@ -3,6 +3,15 @@ import { scrollState, scrollToProgress } from '../lib/scroll'
 import { WORLDS, worldAt, type WorldId } from '../scene/curve'
 import { JUMP_ANCHOR } from './WorldContent'
 
+// Bottom-nav labels only — split the long ones onto two centered lines so
+// every button reads at a consistent height, independent of the shared
+// `label` field used elsewhere (top-right display stays single-line).
+const NAV_LINES: Record<WorldId, string[]> = {
+  hub: ['WHO I AM'],
+  web: ['WEB DESIGN', '& DEV'],
+  sci: ['SCIENTIFIC', 'GRAPHICS'],
+}
+
 /**
  * Fixed DOM layer over the 3D canvas: shows which world you're travelling
  * through, a progress rail, and lets you jump. Updates from scrollState each frame.
@@ -64,15 +73,16 @@ export function Hud() {
         </div>
       </div>
 
-      {/* bottom center: world rail */}
-      <nav className="pointer-events-auto absolute bottom-8 left-1/2 flex -translate-x-1/2 gap-2">
+      {/* bottom center: world rail — fixed-width buttons so short ("WHO I AM")
+          and long ("SCIENTIFIC GRAPHICS") labels still space out evenly */}
+      <nav className="pointer-events-auto absolute bottom-8 left-1/2 flex -translate-x-1/2 justify-center gap-10">
         {WORLDS.map((w) => {
           const on = w.id === activeId
           return (
             <button
               key={w.id}
               onClick={() => jump(w.id)}
-              className="hover-glow group flex flex-col items-center gap-3 px-5 py-3"
+              className="hover-glow group flex w-40 flex-col items-center gap-3 py-3"
               style={{ color: w.accent }}
             >
               <span
@@ -83,13 +93,12 @@ export function Hud() {
                 }}
               />
               <span
-                className="font-mono text-xs tracking-[0.2em] transition-opacity"
-                style={{
-                  color: w.accent,
-                  opacity: on ? 1 : 0.35,
-                }}
+                className="flex min-h-[2.25rem] flex-col items-center justify-center text-center font-mono text-xs leading-tight tracking-[0.2em] transition-opacity"
+                style={{ color: w.accent, opacity: on ? 1 : 0.35 }}
               >
-                {w.label.toUpperCase()}
+                {NAV_LINES[w.id].map((line, i) => (
+                  <span key={i}>{line}</span>
+                ))}
               </span>
             </button>
           )
