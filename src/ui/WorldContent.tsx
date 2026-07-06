@@ -142,23 +142,23 @@ function ProjectBlock({ p, accent }: { p: ProjectData; accent: string }) {
           accent={accent}
         />
       )}
-      <div className="mt-4 flex items-baseline justify-center gap-2">
-        <span className="font-mono text-lg tracking-tight text-[#f2ecdd]">{p.name}</span>
+      <div className="mt-5 flex items-baseline justify-center gap-2">
+        <span className="font-mono text-2xl tracking-tight text-[#f2ecdd]">{p.name}</span>
         {p.href && (
-          <span className="font-mono text-xs" style={{ color: accent }}>
+          <span className="font-mono text-sm" style={{ color: accent }}>
             ↗
           </span>
         )}
       </div>
       <p
-        className="mx-auto mt-2 max-w-96 text-[13px] leading-relaxed text-[#e8e0cf]/85"
+        className="mx-auto mt-3 max-w-[34rem] text-base leading-relaxed text-[#e8e0cf]/85"
         style={{ textShadow: '0 1px 14px rgba(0,0,0,0.95)' }}
       >
         {p.blurb}
       </p>
     </>
   )
-  const cls = 'block w-[560px] text-center'
+  const cls = 'block w-[760px] text-center'
   return p.href ? (
     <a href={p.href} target="_blank" rel="noreferrer" className={`${cls} transition-opacity hover:opacity-80`}>
       {inner}
