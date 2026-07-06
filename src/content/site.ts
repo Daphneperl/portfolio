@@ -18,6 +18,8 @@ export interface WorldContent {
     /** each string is its own paragraph */
     lines?: string[]
     links?: Link[]
+    /** portrait shown to the right of the text (hub banner only) */
+    portrait?: string
     /** projects shown (outside the glass) a few scrolls behind the banner */
     projects?: {
       name: string
@@ -36,6 +38,7 @@ export const CONTENT: Record<WorldId, WorldContent> = {
   hub: {
     intro: {
       heading: 'Daphne Perlman',
+      portrait: '/portrait.png',
       lines: [
         'Designer, developer, artist and biologist. I move between all four and let each one leak into the others.',
         'I build things that are equal parts rigorous and playful: interfaces, scientific visuals, and drawings made by hand.',

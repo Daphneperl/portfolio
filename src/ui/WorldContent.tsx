@@ -196,8 +196,8 @@ function ProjectBlock({ p, accent }: { p: ProjectData; accent: string }) {
 
 /** The glass banner: heading, optional paragraphs, optional links. */
 function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
-  return (
-    <div className="liquid-glass w-[460px] px-10 py-9 sm:px-12 sm:py-11">
+  const text = (
+    <>
       <h1
         className="font-serif text-5xl leading-[1.05] text-[#f2ecdd] sm:text-6xl"
         style={{ textShadow: '0 2px 30px rgba(0,0,0,0.6)' }}
@@ -233,6 +233,24 @@ function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
           ))}
         </div>
       )}
+    </>
+  )
+
+  if (!intro.portrait) {
+    return <div className="liquid-glass w-[460px] px-10 py-9 sm:px-12 sm:py-11">{text}</div>
+  }
+
+  return (
+    <div className="liquid-glass flex w-[820px] items-center gap-10 px-10 py-9 sm:px-12 sm:py-11">
+      <div className="min-w-0 flex-1">{text}</div>
+      {/* plain img, no filter/opacity of its own — only the shared beat fade
+          (applied to the whole panel's wrapper) ever touches its visibility */}
+      <img
+        src={intro.portrait}
+        alt={intro.heading}
+        className="h-[300px] w-[225px] flex-none rounded-2xl object-cover"
+        style={{ border: '1px solid rgba(102, 255, 156, 0.2)' }}
+      />
     </div>
   )
 }
