@@ -39,7 +39,7 @@ export const CONTENT: Record<WorldId, WorldContent> = {
   // 00 — Who I Am  ·············································· EDIT ME
   hub: {
     intro: {
-      heading: 'Daphne Perlman',
+      heading: "I'm Daphne!",
       wide: true,
       floater: '/floating-daph.png',
       lines: [
