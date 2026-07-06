@@ -243,13 +243,16 @@ function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
   return (
     <div className="liquid-glass flex w-[820px] items-center gap-10 px-10 py-9 sm:px-12 sm:py-11">
       <div className="min-w-0 flex-1">{text}</div>
-      {/* plain img, no filter/opacity of its own — only the shared beat fade
-          (applied to the whole panel's wrapper) ever touches its visibility */}
+      {/* Filter is on the img ITSELF (not an ancestor) — punches up contrast/
+          saturation and pulls brightness down a touch so it doesn't read
+          faded/washed-out next to the high-contrast CRT UI. The beat's shared
+          fade (on the whole panel's wrapper) is still the only thing that
+          ever touches its visibility/opacity. */}
       <img
         src={intro.portrait}
         alt={intro.heading}
         className="h-[300px] w-[225px] flex-none rounded-2xl object-cover"
-        style={{ border: '1px solid rgba(102, 255, 156, 0.2)' }}
+        style={{ border: '1px solid rgba(102, 255, 156, 0.2)', filter: 'contrast(1.15) saturate(1.15) brightness(0.94)' }}
       />
     </div>
   )
