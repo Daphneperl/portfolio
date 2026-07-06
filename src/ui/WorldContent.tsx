@@ -254,8 +254,8 @@ function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
         className="h-[300px] w-[225px] flex-none rounded-2xl object-cover"
         style={{
           border: '1px solid rgba(102, 255, 156, 0.2)',
-          filter: 'contrast(1.4) saturate(1.35) brightness(0.82)',
-          boxShadow: 'inset 0 0 40px rgba(0,0,0,0.35)',
+          filter: 'contrast(1.65) saturate(1.6) brightness(0.72)',
+          boxShadow: 'inset 0 0 50px rgba(0,0,0,0.5)',
         }}
       />
     </div>
