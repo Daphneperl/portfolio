@@ -2,7 +2,6 @@ import { Canvas } from '@react-three/fiber'
 import { useLenis } from './lib/scroll'
 import { Scene } from './scene/Scene'
 import { Hud } from './ui/Hud'
-import { CursorGlow } from './ui/CursorGlow'
 
 /**
  * The canvas is fixed and full-screen; a tall invisible track behind it gives
@@ -25,7 +24,6 @@ export default function App() {
       </div>
 
       <Hud />
-      <CursorGlow />
 
       {/* SVG refraction filter for the liquid glass — a smooth, low-frequency noise
           field (blurred so it has no static/grain) drives a gentle displacement of

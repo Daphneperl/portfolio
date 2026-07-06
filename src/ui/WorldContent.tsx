@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { WORLDS } from '../scene/curve'
+import { WORLDS, CURVE_LENGTH, type WorldId } from '../scene/curve'
 import { CONTENT } from '../content/site'
 
 /**
@@ -40,6 +40,32 @@ export const BEATS: Beat[] = WORLDS.flatMap((w) => {
   })
   return list
 })
+
+// Where each world's title banner actually sits (its beat's anchor).
+export const BANNER_ANCHOR: Record<WorldId, number> = Object.fromEntries(
+  WORLDS.map((w) => {
+    const beat = BEATS.find((b) => b.key === w.id || b.key === `${w.id}-banner`)
+    return [w.id, beat?.a ?? w.range[0]]
+  }),
+) as Record<WorldId, number>
+
+// A beat is only fully visible while the camera is still APPROACHING it (see
+// TunnelContent's FADE_MID/NEAR_HI band) — once the camera reaches the exact
+// anchor the distance collapses to ~0 and it's treated as "behind" (invisible).
+// So the chapter nav can't jump to the anchor itself; it has to land a fixed
+// world-distance short of it, still on the approach side, comfortably inside
+// the fully-opaque band. 350 units sits mid-band between NEAR_HI(170)/FADE_MID(620).
+const JUMP_VIEW_DISTANCE = 350
+const JUMP_BACKOFF_T = JUMP_VIEW_DISTANCE / CURVE_LENGTH
+
+export const JUMP_ANCHOR: Record<WorldId, number> = Object.fromEntries(
+  WORLDS.map((w) => {
+    const [s] = w.range
+    // clamp so the backoff can never leave the zone (or cross the loop seam)
+    const target = Math.max(s + 0.002, BANNER_ANCHOR[w.id] - JUMP_BACKOFF_T)
+    return [w.id, target]
+  }),
+) as Record<WorldId, number>
 
 /** DOM for one beat — rendered inside a drei <Html> that lives in the 3D scene. */
 export function BeatContent({ beat }: { beat: Beat }) {

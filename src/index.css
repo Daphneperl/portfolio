@@ -349,27 +349,6 @@ h1, h2, h3 {
   filter:
     drop-shadow(0 0 8px currentColor) drop-shadow(0 0 20px currentColor) drop-shadow(0 0 40px currentColor);
 }
-
-/* Ambient glow trailing the real cursor — the exact same glow recipe as
-   .hover-glow:hover (same drop-shadow radii, same slow fade), so the cursor
-   itself reads as part of the CRT system. Tints to the active section's accent
-   (see CursorGlow.tsx), always on rather than hover-triggered. */
-.cursor-glow {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: currentColor;
-  color: var(--glow-color, #66ff9c);
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0;
-  transition: opacity 1.6s ease;
-  filter:
-    drop-shadow(0 0 8px currentColor) drop-shadow(0 0 20px currentColor) drop-shadow(0 0 40px currentColor);
-}
 @keyframes glass-sheen {
   0%,
   100% {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { scrollState, scrollToProgress } from '../lib/scroll'
 import { WORLDS, worldAt, type WorldId } from '../scene/curve'
+import { JUMP_ANCHOR } from './WorldContent'
 
 /**
  * Fixed DOM layer over the 3D canvas: shows which world you're travelling
@@ -24,10 +25,9 @@ export function Hud() {
   const active = worldAt(progress)
 
   const jump = (id: WorldId) => {
-    const w = WORLDS.find((x) => x.id === id)!
-    // aim just inside the world's start so we clearly land in it
-    const target = w.range[0] + (w.range[1] - w.range[0]) * 0.15
-    scrollToProgress(target)
+    // land a fixed distance BEFORE the banner (still approaching, fully lit) —
+    // not at its exact anchor, which collapses to "just behind you" (invisible).
+    scrollToProgress(JUMP_ANCHOR[id])
   }
 
   return (

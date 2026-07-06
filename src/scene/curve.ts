@@ -27,6 +27,9 @@ export const tunnelCurve = new THREE.CatmullRomCurve3(
 )
 // Denser arc-length table => even, glitch-free mapping of scroll -> position.
 tunnelCurve.arcLengthDivisions = 2000
+// Real arc length of the loop, in world units — lets other modules convert a
+// world-unit distance (e.g. "land 350 units before this beat") into a t-delta.
+export const CURVE_LENGTH = tunnelCurve.getLength()
 
 export const FRENET_SEGMENTS = 400
 // Precompute closed Frenet frames once — used to place walls, items, everything
