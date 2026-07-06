@@ -55,7 +55,7 @@ export const BANNER_ANCHOR: Record<WorldId, number> = Object.fromEntries(
 // So the chapter nav can't jump to the anchor itself; it has to land a fixed
 // world-distance short of it, still on the approach side, comfortably inside
 // the fully-opaque band. 350 units sits mid-band between NEAR_HI(170)/FADE_MID(620).
-const JUMP_VIEW_DISTANCE = 350
+const JUMP_VIEW_DISTANCE = 280
 const JUMP_BACKOFF_T = JUMP_VIEW_DISTANCE / CURVE_LENGTH
 
 export const JUMP_ANCHOR: Record<WorldId, number> = Object.fromEntries(
