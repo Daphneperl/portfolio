@@ -252,7 +252,11 @@ function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
         src={intro.portrait}
         alt={intro.heading}
         className="h-[300px] w-[225px] flex-none rounded-2xl object-cover"
-        style={{ border: '1px solid rgba(102, 255, 156, 0.2)', filter: 'contrast(1.15) saturate(1.15) brightness(0.94)' }}
+        style={{
+          border: '1px solid rgba(102, 255, 156, 0.2)',
+          filter: 'contrast(1.4) saturate(1.35) brightness(0.82)',
+          boxShadow: 'inset 0 0 40px rgba(0,0,0,0.35)',
+        }}
       />
     </div>
   )
