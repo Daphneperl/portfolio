@@ -28,7 +28,7 @@ export function useLenis() {
   useEffect(() => {
     lenis = new Lenis({
       lerp: 0.08, // lower = smoother/heavier inertia. THIS is the feel the original lacked.
-      wheelMultiplier: 1,
+      wheelMultiplier: -1, // flip scroll direction: scroll down = travel forward through the tunnel
       smoothWheel: true,
       infinite: true, // scroll never ends — it wraps around the loop
     })

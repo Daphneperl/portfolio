@@ -151,32 +151,44 @@ h1, h2, h3 {
   mask-composite: intersect;
 }
 
-/* ---- Retro IE / Windows 2000 window chrome (project "browser" windows) ---- */
+/* ---- Retro terminal window chrome (project windows) ----
+   Same phosphor-CRT family as .liquid-glass: dark green-black body, scanlines,
+   phosphor rim glow, mono font. Keeps the "old computer browser" structure
+   (titlebar/menu/toolbar/address/status) as the concept — a software specimen
+   surfacing from the void — but reskinned so it reads as one screen with the
+   banners instead of a beige Windows-98 window. --rw-accent ties the titlebar
+   glow + Go button to the section's one accent color (amber for web, etc). */
 .retro-window {
-  --silver: #c0c0c0;
+  --rw-accent: #66ff9c;
   width: 100%;
-  padding: 3px;
-  background: var(--silver);
-  color: #000;
-  font-family: 'Tahoma', 'Geneva', 'Verdana', sans-serif;
+  border-radius: 16px;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(0deg, rgba(102, 255, 156, 0.05) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+    linear-gradient(180deg, rgba(8, 20, 13, 0.7), rgba(4, 10, 7, 0.82));
+  border: 1px solid rgba(102, 255, 156, 0.16);
+  color: #cfe6d6;
+  font-family: var(--font-mono);
   font-size: 11px;
-  line-height: 1.2;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
   text-align: left;
   user-select: none;
   box-shadow:
-    inset -1px -1px #0a0a0a,
-    inset 1px 1px #fff,
-    inset -2px -2px #808080,
-    inset 2px 2px #dfdfdf;
+    0 12px 44px rgba(0, 0, 0, 0.5),
+    0 0 28px rgba(102, 255, 156, 0.08),
+    inset 0 1px 1px rgba(102, 255, 156, 0.3),
+    inset 0 -10px 24px rgba(0, 0, 0, 0.3);
 }
 .retro-titlebar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  height: 18px;
-  padding: 0 2px;
-  background: linear-gradient(90deg, #0a246a, #3a6ea5 55%, #7aa9dd);
-  color: #fff;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  background: linear-gradient(180deg, rgba(102, 255, 156, 0.1), rgba(102, 255, 156, 0.02));
+  border-bottom: 1px solid rgba(102, 255, 156, 0.18);
+  color: var(--rw-accent);
 }
 .retro-ico,
 .retro-fav {
@@ -184,30 +196,32 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 15px;
-  height: 15px;
-  background: #fff;
-  color: #1a52d6;
-  font-style: italic;
+  width: 13px;
+  height: 13px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  color: var(--rw-accent);
+  font-style: normal;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 9px;
 }
 .retro-fav {
-  width: 14px;
-  height: 14px;
-  font-size: 10px;
+  width: 12px;
+  height: 12px;
+  font-size: 8px;
 }
 .retro-title-text {
   flex: 1;
   min-width: 0;
-  font-weight: 700;
+  color: #eef2e9;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .retro-winbtns {
   display: flex;
-  gap: 2px;
+  gap: 4px;
 }
 .retro-winbtn {
   width: 16px;
@@ -215,83 +229,71 @@ h1, h2, h3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--silver);
-  color: #000;
+  border: 1px solid rgba(102, 255, 156, 0.25);
+  border-radius: 3px;
+  color: rgba(207, 230, 214, 0.7);
   font-size: 9px;
-  box-shadow:
-    inset -1px -1px #0a0a0a,
-    inset 1px 1px #fff,
-    inset -2px -2px #808080,
-    inset 2px 2px #dfdfdf;
 }
 .retro-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 2px 4px;
+  padding: 4px 8px;
+  color: rgba(207, 230, 214, 0.55);
+  border-bottom: 1px solid rgba(102, 255, 156, 0.08);
   white-space: nowrap;
 }
 .retro-menu u {
   text-decoration: underline;
+  text-decoration-color: rgba(102, 255, 156, 0.4);
 }
 .retro-toolbar {
-  gap: 8px;
-  color: #202020;
+  gap: 10px;
+  color: rgba(207, 230, 214, 0.45);
 }
 .retro-sep {
-  width: 2px;
+  width: 1px;
   align-self: stretch;
-  margin: 2px 1px;
-  box-shadow:
-    inset 1px 0 #808080,
-    inset -1px 0 #fff;
+  margin: 1px 2px;
+  background: rgba(102, 255, 156, 0.15);
 }
 .retro-address {
-  gap: 5px;
+  gap: 6px;
 }
 .retro-address-label {
-  color: #404040;
+  color: rgba(207, 230, 214, 0.4);
 }
 .retro-field {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 3px;
-  background: #fff;
-  box-shadow:
-    inset -1px -1px #fff,
-    inset 1px 1px #808080,
-    inset -2px -2px #dfdfdf,
-    inset 2px 2px #0a0a0a;
+  gap: 5px;
+  padding: 3px 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(102, 255, 156, 0.14);
+  border-radius: 4px;
 }
 .retro-url {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: rgba(207, 230, 214, 0.75);
 }
 .retro-go {
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 2px 7px;
-  background: var(--silver);
-  box-shadow:
-    inset -1px -1px #0a0a0a,
-    inset 1px 1px #fff,
-    inset -2px -2px #808080,
-    inset 2px 2px #dfdfdf;
+  padding: 3px 9px;
+  border: 1px solid rgba(102, 255, 156, 0.25);
+  border-radius: 4px;
+  color: var(--rw-accent);
 }
 .retro-content {
   aspect-ratio: 4 / 3;
   overflow: hidden;
   background: #000;
-  box-shadow:
-    inset -1px -1px #fff,
-    inset 1px 1px #808080,
-    inset -2px -2px #dfdfdf,
-    inset 2px 2px #0a0a0a;
+  border-top: 1px solid rgba(102, 255, 156, 0.1);
 }
 .retro-content img {
   display: block;
@@ -301,17 +303,16 @@ h1, h2, h3 {
 }
 .retro-status {
   display: flex;
-  gap: 3px;
-  margin-top: 3px;
+  gap: 1px;
+  padding: 3px 4px;
+  border-top: 1px solid rgba(102, 255, 156, 0.1);
 }
 .retro-status-cell {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 6px;
-  box-shadow:
-    inset -1px -1px #fff,
-    inset 1px 1px #808080;
+  padding: 2px 8px;
+  color: rgba(207, 230, 214, 0.45);
 }
 .retro-status-cell:first-child {
   flex: 1;

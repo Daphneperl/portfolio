@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { WORLDS } from '../scene/curve'
 import { CONTENT } from '../content/site'
 
@@ -56,15 +57,17 @@ function RetroWindow({
   gif,
   alt,
   aspect,
+  accent,
 }: {
   title: string
   url: string
   gif: string
   alt: string
   aspect: string
+  accent: string
 }) {
   return (
-    <div className="retro-window">
+    <div className="retro-window" style={{ '--rw-accent': accent } as CSSProperties}>
       <div className="retro-titlebar">
         <span className="retro-ico">e</span>
         <span className="retro-title-text">{title} - Microsoft Internet Explorer</span>
@@ -136,6 +139,7 @@ function ProjectBlock({ p, accent }: { p: ProjectData; accent: string }) {
           gif={p.gif}
           alt={p.name}
           aspect={p.aspect ?? '4 / 3'}
+          accent={accent}
         />
       )}
       <div className="mt-4 flex items-baseline justify-center gap-2">
