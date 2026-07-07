@@ -141,10 +141,10 @@ export function BeatContent({ beat }: { beat: Beat }) {
 // inside it rather than cropping — no visible frame behind them, though, so
 // letterboxing just reads as empty space). Radius keeps the ring's diameter
 // comfortably larger than the face width so faces don't intersect mid-spin.
-const CAROUSEL_FACE_W = 420
-const CAROUSEL_FACE_W_MOBILE = 200
-const CAROUSEL_FACE_H = 280
-const CAROUSEL_FACE_H_MOBILE = 160
+const CAROUSEL_FACE_W = 510
+const CAROUSEL_FACE_W_MOBILE = 240
+const CAROUSEL_FACE_H = 340
+const CAROUSEL_FACE_H_MOBILE = 190
 const CAROUSEL_RADIUS = 780
 const CAROUSEL_RADIUS_MOBILE = 380
 const CAROUSEL_SPIN_PERIOD_MS = 130_000 // ambient auto-spin: one full turn every ~2min
