@@ -76,7 +76,7 @@ export function Hud() {
       {/* bottom center: world rail (sm and up) — fixed-width buttons so short
           ("WHO I AM") and long ("SCIENTIFIC GRAPHICS") labels still space out
           evenly. Hidden on mobile in favour of the stacked bottom-left rail. */}
-      <nav className="pointer-events-auto absolute bottom-8 left-1/2 hidden -translate-x-1/2 justify-center gap-10 sm:flex">
+      <nav className="pointer-events-auto absolute bottom-4 left-1/2 hidden -translate-x-1/2 justify-center gap-10 sm:flex">
         {WORLDS.map((w) => {
           const on = w.id === activeId
           return (
@@ -94,7 +94,7 @@ export function Hud() {
                 }}
               />
               <span
-                className="flex min-h-[2.25rem] flex-col items-center justify-center text-center font-mono text-xs leading-tight tracking-[0.2em] transition-opacity"
+                className="flex min-h-[2.25rem] flex-col items-center justify-start text-center font-mono text-xs leading-tight tracking-[0.2em] transition-opacity"
                 style={{ color: w.accent, opacity: on ? 1 : 0.35 }}
               >
                 {NAV_LINES[w.id].map((line, i) => (
