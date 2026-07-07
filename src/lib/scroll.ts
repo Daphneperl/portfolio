@@ -15,6 +15,13 @@ export const scrollState = {
   vpy: 0,
 }
 
+// Set when a beat is click-focused (see WorldContent's handleBeatClick), holding
+// that beat's own curve anchor `a`. CameraRig reads this to aim directly at the
+// beat once close enough, instead of just following the curve tangent — the
+// tunnel bends, so tangent-only look drifts off-centre the further a beat's
+// jump-anchor backoff is from its real anchor. Cleared once scrolled away.
+export const focusState = { a: null as number | null }
+
 let lenis: Lenis | null = null
 
 /** Jump to a global progress (0..1) THROUGH Lenis, so it doesn't fight native scroll. */

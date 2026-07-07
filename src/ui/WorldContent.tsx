@@ -1,7 +1,7 @@
-import type { CSSProperties, MouseEvent } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent } from 'react'
 import { WORLDS, CURVE_LENGTH, type WorldId } from '../scene/curve'
 import { CONTENT } from '../content/site'
-import { scrollState, scrollToProgress } from '../lib/scroll'
+import { focusState, scrollState, scrollToProgress } from '../lib/scroll'
 
 /**
  * The readable content, and where each piece sits ALONG the tunnel curve.
@@ -98,15 +98,112 @@ function isFocused(a: number, backoffT: number): boolean {
 function handleBeatClick(a: number, hasLink: boolean, e: MouseEvent, backoffT: number = JUMP_BACKOFF_T) {
   if (hasLink && isFocused(a, backoffT)) return // already in view — let the link navigate
   e.preventDefault()
+  focusState.a = a // CameraRig aims straight at this beat once close, instead of just the tangent
   scrollToProgress(jumpAnchorFor(a, backoffT))
 }
 
 /** DOM for one beat — rendered inside a drei <Html> that lives in the 3D scene. */
 export function BeatContent({ beat }: { beat: Beat }) {
   return beat.kind === 'panel' ? (
-    <GlassPanel intro={beat.intro} accent={beat.accent} a={beat.a} />
+    <GlassPanel intro={beat.intro} accent={beat.accent} a={beat.a} withStars={beat.key === 'hub'} />
   ) : (
     <ProjectBlock p={beat.project} accent={beat.accent} a={beat.a} />
+  )
+}
+
+// Every star PNG in public/items/stars — small gold clip-art stars, several
+// silhouettes so the fall doesn't look like one shape repeating.
+const STAR_FILES = [
+  'star_0000_Layer-2.png',
+  'star_0001_Layer-3.png',
+  'star_0002_Layer-4.png',
+  'star_0003_Layer-5.png',
+  'star_0004_Layer-6.png',
+  'star_0005_Layer-7.png',
+  'star_0006_Layer-8.png',
+  'star_0007_Layer-9.png',
+  'star_0008_Layer-10.png',
+  'star_0009_Layer-11.png',
+  'star_0010_Layer-12.png',
+  'star_0011_Layer-13.png',
+  'star_0012_Layer-14.png',
+  'star_0013_Layer-15.png',
+  'star_0014_Layer-1.png',
+]
+const STAR_COUNT = 60
+
+/** Small stars falling + rotating from the bottom edge of the hub banner,
+ * behind it (negative z-index) so they read as spawning from behind the
+ * glass. Each spawns a bit above the panel's bottom edge (--fall-start is
+ * negative) so the actual pop-in point is hidden behind the glass, only
+ * becoming visible once it's fallen past the real edge. Randomized once per
+ * mount — spawn x (full banner width), size, spin, distance/speed/delay — so
+ * they don't move as one synchronized block. Held paused (and invisible)
+ * until the user's first scroll input, per the "only fall once they scroll"
+ * ask — the hub sits at rest at the very start of the journey, so without
+ * this they'd already be falling before anyone touched the page. */
+function FallingStars() {
+  const [started, setStarted] = useState(false)
+
+  useEffect(() => {
+    if (started) return
+    let raf = 0
+    const check = () => {
+      if (Math.abs(scrollState.velocity) > 0.01) {
+        setStarted(true)
+        return
+      }
+      raf = requestAnimationFrame(check)
+    }
+    raf = requestAnimationFrame(check)
+    return () => cancelAnimationFrame(raf)
+  }, [started])
+
+  const stars = useMemo(
+    () =>
+      Array.from({ length: STAR_COUNT }, (_, i) => {
+        const duration = 4 + Math.random() * 5
+        return {
+          key: i,
+          file: STAR_FILES[Math.floor(Math.random() * STAR_FILES.length)],
+          left: Math.random() * 100,
+          size: 12 + Math.random() * 16,
+          duration,
+          delay: -Math.random() * duration, // negative: already mid-fall on mount, staggered
+          fallStart: -(30 + Math.random() * 60), // spawns behind the panel, above its bottom edge
+          fallDistance: 220 + Math.random() * 260,
+          spin: (Math.random() < 0.5 ? -1 : 1) * (240 + Math.random() * 360),
+        }
+      }),
+    [],
+  )
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-full -z-10 h-0 overflow-visible">
+      {stars.map((s) => (
+        <img
+          key={s.key}
+          src={`/items/stars/${s.file}`}
+          alt=""
+          className="falling-star"
+          style={
+            {
+              left: `${s.left}%`,
+              width: s.size,
+              // 'none' until scrolling starts: a CSS animation overrides any
+              // inline value for a property it targets even while paused, so
+              // pausing alone can't keep these invisible pre-scroll — the
+              // animation itself has to not be attached yet.
+              animationName: started ? 'star-fall' : 'none',
+              animationDuration: `${s.duration}s`,
+              animationDelay: `${s.delay}s`,
+              '--fall-start': `${s.fallStart}px`,
+              '--fall-distance': `${s.fallDistance}px`,
+              '--fall-spin': `${s.spin}deg`,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </div>
   )
 }
 
@@ -237,7 +334,17 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
 }
 
 /** The glass banner: heading, optional paragraphs, optional links. */
-function GlassPanel({ intro, accent, a }: { intro: IntroData; accent: string; a: number }) {
+function GlassPanel({
+  intro,
+  accent,
+  a,
+  withStars,
+}: {
+  intro: IntroData
+  accent: string
+  a: number
+  withStars?: boolean
+}) {
   const panel = (
     <div
       className={`liquid-glass px-10 py-9 sm:px-12 sm:py-11 ${
@@ -286,23 +393,26 @@ function GlassPanel({ intro, accent, a }: { intro: IntroData; accent: string; a:
     </div>
   )
 
-  if (!intro.floater) return panel
+  if (!intro.floater && !withStars) return panel
 
   return (
     <div className="relative">
+      {withStars && <FallingStars />}
       {panel}
       {/* Plain CSS sibling, not a separate 3D object — it shares the exact same
           transform/scale as the panel (both live inside the same beat), so its
           position relative to the panel can never drift with distance. Fixed
           in place (no rise/sink motion); opacity cascades from the shared
           beat wrapper, so it only ever fades in/out with the panel. */}
-      <div className="pointer-events-none absolute right-[20px] top-[-140px] sm:right-[40px] sm:top-[-220px]">
-        <img
-          src={intro.floater}
-          alt=""
-          className="edge-fade h-[140px] w-[140px] rounded-2xl object-cover sm:h-[220px] sm:w-[220px]"
-        />
-      </div>
+      {intro.floater && (
+        <div className="pointer-events-none absolute right-[20px] top-[-140px] sm:right-[40px] sm:top-[-220px]">
+          <img
+            src={intro.floater}
+            alt=""
+            className="edge-fade h-[140px] w-[140px] rounded-2xl object-cover sm:h-[220px] sm:w-[220px]"
+          />
+        </div>
+      )}
     </div>
   )
 }

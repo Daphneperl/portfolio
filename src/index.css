@@ -373,6 +373,34 @@ h1, h2, h3 {
   }
 }
 
+/* ---- Falling stars behind the hub banner ---- */
+@keyframes star-fall {
+  0% {
+    transform: translateY(var(--fall-start, -50px)) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: translateY(var(--fall-distance, 420px)) rotate(var(--fall-spin, 360deg));
+    opacity: 0;
+  }
+}
+.falling-star {
+  position: absolute;
+  top: 0;
+  height: auto;
+  opacity: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
 /* ---- Hover: warm glow + gentle float-up (glass panels & chapter buttons) ---- */
 
 /* glass panels need to catch the pointer to be hoverable */
