@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent } from 'react'
 import { WORLDS, CURVE_LENGTH, type WorldId } from '../scene/curve'
 import { CONTENT } from '../content/site'
-import { focusState, scrollState, scrollToProgress } from '../lib/scroll'
+import { scrollState, scrollToProgress } from '../lib/scroll'
 
 /**
  * The readable content, and where each piece sits ALONG the tunnel curve.
@@ -105,7 +105,6 @@ function isFocused(a: number, backoffT: number): boolean {
 function handleBeatClick(a: number, hasLink: boolean, e: MouseEvent, backoffT: number = JUMP_BACKOFF_T) {
   if (hasLink && isFocused(a, backoffT)) return // already in view — let the link navigate
   e.preventDefault()
-  focusState.a = a // CameraRig aims straight at this beat once close, instead of just the tangent
   scrollToProgress(jumpAnchorFor(a, backoffT))
 }
 
