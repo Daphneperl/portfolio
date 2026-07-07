@@ -52,6 +52,7 @@ const PILE_MAX_ROLL = (10 * Math.PI) / 180 // "crooked, but only 10deg either wa
 const PILE_ENLARGE_SCALE = 1.9 // double-click "bring to front" size multiplier
 const PILE_ENLARGE_LERP_TO_CAMERA = 0.5 // how far toward the camera it pulls, 0..1
 const PILE_LERP_SPEED = 0.18 // per-frame ease toward the enlarge/restore target
+const PILE_CLICK_THRESHOLD = 6 // px of pointer travel before a release counts as a drag, not a click
 
 interface PlacedSketch {
   file: string
@@ -105,6 +106,12 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
   const dragOffset = useRef(new THREE.Vector3())
   const hitPoint = useRef(new THREE.Vector3())
   const camForward = useRef(new THREE.Vector3())
+  // Cumulative pointer travel this press, in screen px — tells a plain click
+  // (both halves of a double-click included) apart from an actual drag, so a
+  // double-click's own two pointerup events don't reset enlargedRef before
+  // onDoubleClick ever gets to read it.
+  const movedRef = useRef(0)
+  const downClientPos = useRef({ x: 0, y: 0 })
 
   // Eased toward by the useFrame below whenever not actively being dragged
   // (dragging writes group.position directly for 1:1 tracking, and keeps
@@ -131,6 +138,8 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
     if (!group) return
     ;(e.target as Element).setPointerCapture?.(e.pointerId)
     draggingRef.current = true
+    movedRef.current = 0
+    downClientPos.current = { x: e.clientX, y: e.clientY }
     camera.getWorldDirection(camForward.current)
     dragPlane.current.setFromNormalAndCoplanarPoint(camForward.current, group.position)
     if (e.ray.intersectPlane(dragPlane.current, hitPoint.current)) {
@@ -141,6 +150,10 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
   }
   const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
     if (!draggingRef.current) return
+    movedRef.current = Math.max(
+      movedRef.current,
+      Math.hypot(e.clientX - downClientPos.current.x, e.clientY - downClientPos.current.y),
+    )
     const group = groupRef.current
     if (!group) return
     if (e.ray.intersectPlane(dragPlane.current, hitPoint.current)) {
@@ -150,8 +163,12 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
   }
   const onPointerUp = () => {
     draggingRef.current = false
-    // Dragging it away implicitly "puts it down" — next double-click starts
-    // a fresh enlarge from wherever it just landed, not the old pile slot.
+    // Only a REAL drag implicitly "puts it down" (next double-click starts a
+    // fresh enlarge from wherever it just landed) — a plain click's release
+    // must leave enlargedRef alone, since both halves of a double-click also
+    // fire this, and resetting here would stop onDoubleClick below from ever
+    // seeing enlargedRef as true.
+    if (movedRef.current <= PILE_CLICK_THRESHOLD) return
     enlargedRef.current = false
     const group = groupRef.current
     if (group) {
