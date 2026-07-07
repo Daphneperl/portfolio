@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { WORLDS, CURVE_LENGTH, type WorldId } from '../scene/curve'
 import { CONTENT } from '../content/site'
 import { focusState, scrollState, scrollToProgress } from '../lib/scroll'
@@ -12,10 +13,12 @@ import { focusState, scrollState, scrollToProgress } from '../lib/scroll'
 
 type IntroData = NonNullable<(typeof CONTENT)['hub']['intro']>
 type ProjectData = NonNullable<IntroData['projects']>[number]
+type PaperData = NonNullable<IntroData['papers']>[number]
 
 export type Beat =
   | { key: string; kind: 'panel'; intro: IntroData; accent: string; a: number }
   | { key: string; kind: 'project'; project: ProjectData; accent: string; a: number }
+  | { key: string; kind: 'papers'; papers: PaperData[]; accent: string; a: number }
 
 // Each beat is pinned to a curve param `a` (same 0..1 the camera travels). Panels
 // sit at their zone centre; a zone with projects puts its title near the front
@@ -26,7 +29,8 @@ export const BEATS: Beat[] = WORLDS.flatMap((w) => {
   const [s, e] = w.range
   const span = e - s
   const projects = intro.projects ?? []
-  if (projects.length === 0) {
+  const papers = intro.papers ?? []
+  if (projects.length === 0 && papers.length === 0) {
     return [{ key: w.id, kind: 'panel', intro, accent: w.accent, a: s + 0.5 * span }]
   }
   const list: Beat[] = [{ key: `${w.id}-banner`, kind: 'panel', intro, accent: w.accent, a: s + 0.12 * span }]
@@ -34,7 +38,7 @@ export const BEATS: Beat[] = WORLDS.flatMap((w) => {
   // so adding/removing a project never needs the spacing retuned by hand —
   // 2 projects land exactly where the old fixed 0.38/0.32 step put them.
   const PROJECT_START = 0.38
-  const PROJECT_END = 0.7
+  const PROJECT_END = 0.85
   projects.forEach((p, i) => {
     const frac =
       projects.length > 1 ? PROJECT_START + ((PROJECT_END - PROJECT_START) * i) / (projects.length - 1) : PROJECT_START
@@ -46,6 +50,9 @@ export const BEATS: Beat[] = WORLDS.flatMap((w) => {
       a: s + frac * span,
     })
   })
+  if (papers.length > 0) {
+    list.push({ key: `${w.id}-papers`, kind: 'papers', papers, accent: w.accent, a: s + 0.52 * span })
+  }
   return list
 })
 
@@ -120,10 +127,157 @@ function handleBeatClick(a: number, hasLink: boolean, e: MouseEvent, backoffT: n
 
 /** DOM for one beat — rendered inside a drei <Html> that lives in the 3D scene. */
 export function BeatContent({ beat }: { beat: Beat }) {
-  return beat.kind === 'panel' ? (
-    <GlassPanel intro={beat.intro} accent={beat.accent} a={beat.a} withStars={beat.key === 'hub'} />
+  if (beat.kind === 'panel') {
+    return <GlassPanel intro={beat.intro} accent={beat.accent} a={beat.a} withStars={beat.key === 'hub'} />
+  }
+  if (beat.kind === 'project') {
+    return <ProjectBlock p={beat.project} accent={beat.accent} a={beat.a} />
+  }
+  return <PapersGrid papers={beat.papers} accent={beat.accent} a={beat.a} />
+}
+
+/** Full-screen preview of a hovered paper — portaled straight to <body>. It
+ * has to be a portal, not a sibling inside the grid's own Html sprite: that
+ * Html node is positioned with a CSS transform (drei's 3D-to-screen
+ * projection), and a `transform` on an ancestor redefines the containing
+ * block for `position: fixed` descendants — so a fixed-centered overlay
+ * INSIDE the sprite would centre on the sprite's own transformed box, not
+ * the real viewport. Portaling to <body> escapes that entirely. Purely
+ * visual (pointer-events-none) — clicking/focusing still happens on the
+ * small thumbnail underneath, which keeps receiving the real hover events
+ * regardless of what's portaled elsewhere on screen. */
+function PaperHoverPreview({ paper, accent }: { paper: PaperData; accent: string }) {
+  return createPortal(
+    <div className="pointer-events-none fixed inset-0 z-[500] flex flex-col items-center justify-center">
+      <div className="absolute inset-0 bg-black/40 transition-opacity" />
+      <div className="paper-preview relative flex flex-col items-center">
+        <img
+          src={paper.image}
+          alt={paper.title}
+          className="rounded-none"
+          style={{ maxHeight: '62vh', maxWidth: '72vw', width: 'auto', height: 'auto', boxShadow: '0 30px 90px rgba(0,0,0,0.85)' }}
+        />
+        <div
+          className="mt-5 max-w-[46rem] text-center font-mono text-sm leading-relaxed text-[#e8e0cf] sm:text-lg"
+          style={{ textShadow: '0 1px 14px rgba(0,0,0,0.95)' }}
+        >
+          {paper.title}
+          <div className="mt-2 tracking-[0.2em]" style={{ color: accent }}>
+            {paper.year}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+/** One paper's image in the grid — sharp corners, no crop (its real aspect
+ * ratio via a computed height + auto width). Click behaves exactly like a
+ * project window: first click scrolls/focuses it into view, a second click
+ * (only once already focused) lets the link navigate. stopPropagation keeps
+ * the container's own click (for clicking the gaps between images) from
+ * double-firing. Hovering shows the full-screen preview above. */
+function PaperCell({ paper, a, backoffT, height, onHoverChange }: { paper: PaperData; a: number; backoffT: number; height: number; onHoverChange: (hovered: boolean) => void }) {
+  const img = (
+    <img
+      src={paper.image}
+      alt={paper.title}
+      className="w-auto rounded-none"
+      style={{ height, boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}
+    />
+  )
+  const onClick = (e: MouseEvent) => {
+    handleBeatClick(a, Boolean(paper.href), e, backoffT)
+    e.stopPropagation()
+  }
+  const hoverHandlers = { onMouseEnter: () => onHoverChange(true), onMouseLeave: () => onHoverChange(false) }
+  return paper.href ? (
+    <a
+      href={paper.href}
+      target="_blank"
+      rel="noreferrer"
+      onClick={onClick}
+      className="block shrink-0 transition-opacity hover:opacity-75"
+      {...hoverHandlers}
+    >
+      {img}
+    </a>
   ) : (
-    <ProjectBlock p={beat.project} accent={beat.accent} a={beat.a} />
+    <div onClick={onClick} className="block shrink-0" {...hoverHandlers}>
+      {img}
+    </div>
+  )
+}
+
+// Wider now than the original tight contact-sheet spacing — both between
+// images within a row, and between the two rows.
+const PAPERS_GAP = 28
+const PAPERS_GAP_MOBILE = 14
+const PAPERS_ROW_GAP = 40
+const PAPERS_ROW_GAP_MOBILE = 20
+const PAPERS_BASE_HEIGHT = 200 // row 1's height; row 2 is derived to match its total width
+const PAPERS_BASE_HEIGHT_MOBILE = 90
+
+function rowWidth(row: PaperData[], height: number, gap: number): number {
+  return row.reduce((sum, p) => sum + height * p.aspect, 0) + gap * (row.length - 1)
+}
+function heightForWidth(row: PaperData[], targetWidth: number, gap: number): number {
+  const aspectSum = row.reduce((sum, p) => sum + p.aspect, 0)
+  return (targetWidth - gap * (row.length - 1)) / aspectSum
+}
+
+/** All papers in the world's `papers` list, sorted oldest -> newest, laid out
+ * as a 2-row grid (row 1 = the 5 oldest, row 2 = the 5 newest). Each image
+ * keeps its own aspect ratio — row 1 sets a base height, row 2's height is
+ * derived so its total width matches row 1's exactly, so the two rows form
+ * one clean rectangle instead of two independently-centred, differently-wide
+ * strips. Same viewing distance as project windows (projectBackoffT) since it
+ * reads at a similar on-screen scale. */
+function PapersGrid({ papers, accent, a }: { papers: PaperData[]; accent: string; a: number }) {
+  const sorted = useMemo(() => [...papers].sort((x, y) => x.year - y.year), [papers])
+  const row1 = sorted.slice(0, 5)
+  const row2 = sorted.slice(5, 10)
+  const mobile = typeof window !== 'undefined' && window.innerWidth < 640
+  const gap = mobile ? PAPERS_GAP_MOBILE : PAPERS_GAP
+  const rowGap = mobile ? PAPERS_ROW_GAP_MOBILE : PAPERS_ROW_GAP
+  const row1Height = mobile ? PAPERS_BASE_HEIGHT_MOBILE : PAPERS_BASE_HEIGHT
+  const targetWidth = rowWidth(row1, row1Height, gap)
+  const row2Height = heightForWidth(row2, targetWidth, gap)
+  const backoffT = projectBackoffT()
+  const [hovered, setHovered] = useState<PaperData | null>(null)
+  return (
+    <div
+      className="flex w-max flex-col items-center"
+      style={{ color: accent, gap: rowGap }}
+      onClick={(e) => handleBeatClick(a, false, e, backoffT)}
+    >
+      <div className="flex w-max items-end justify-center" style={{ gap }}>
+        {row1.map((p) => (
+          <PaperCell
+            key={p.image}
+            paper={p}
+            a={a}
+            backoffT={backoffT}
+            height={row1Height}
+            onHoverChange={(h) => setHovered(h ? p : null)}
+          />
+        ))}
+      </div>
+      <div className="flex w-max items-end justify-center" style={{ gap }}>
+        {row2.map((p) => (
+          <PaperCell
+            key={p.image}
+            paper={p}
+            a={a}
+            backoffT={backoffT}
+            height={row2Height}
+            onHoverChange={(h) => setHovered(h ? p : null)}
+          />
+        ))}
+      </div>
+      {hovered && <PaperHoverPreview paper={hovered} accent={accent} />}
+    </div>
   )
 }
 

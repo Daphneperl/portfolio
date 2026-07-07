@@ -32,6 +32,15 @@ export interface WorldContent {
       /** gif aspect ratio "w / h" so the window fits it without cropping */
       aspect?: string
     }[]
+    /** papers shown as a sorted 2-row grid a few scrolls behind the banner */
+    papers?: {
+      title: string
+      image: string
+      year: number
+      href?: string
+      /** the image's real width/height ratio, so the grid can size it without cropping */
+      aspect: number
+    }[]
   }
 }
 
@@ -94,6 +103,81 @@ export const CONTENT: Record<WorldId, WorldContent> = {
         'Figures & data viz for micro/neurobiology papers.',
         'Interactive microbiology art exhibition, BGU.',
         'First-author review, Annual Review of Animal Biosciences.',
+      ],
+      // Rendered as a sorted-by-year 2x5 grid — see WorldContent's PapersGrid.
+      papers: [
+        {
+          title:
+            'Plasmids in the human gut reveal neutral dispersal and recombination that is overpowered by inflammatory diseases',
+          href: 'https://www.nature.com/articles/s41467-024-47272-x.pdf',
+          year: 2024,
+          image: '/items/papers/Plasmids.png',
+          aspect: 1.2287,
+        },
+        {
+          title: 'Community context reshapes microbial proteomes and reduces functional overlap',
+          href: 'https://www.nature.com/articles/s41564-026-02310-w.pdf',
+          year: 2026,
+          image: '/items/papers/Communityproteome.png',
+          aspect: 0.8965,
+        },
+        {
+          title: 'Micro-scale spatial metagenomics opens a new era in microbiome ecology',
+          href: 'https://arc.net/l/quote/kapcetbf',
+          year: 2026,
+          image: '/items/papers/Micro-scale.png',
+          aspect: 0.8803,
+        },
+        {
+          title: 'Endemic within endemics: the microbiota of the Galapagos marine iguanas',
+          href: 'https://watermark02.silverchair.com/ycag040.pdf?token=AQECAHi208BE49Ooan9kkhW_Ercy7Dm3ZL_9Cf3qfKAc485ysgAAA1wwggNYBgkqhkiG9w0BBwagggNJMIIDRQIBADCCAz4GCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMziL2G_R_IpO7TJGXAgEQgIIDD0Jc4asHjIt0Fv6RbFu5_dWotc3HVrIZPS7Rt4nrqXSC9sZHgvfWd7K5jjiGXHV3W19xhln_dPceNA-7NIBigkQKSmlHDYKxDhUKpfIL8EMGpy-bpFg_X11jGz5WXNemhH6FPv8RDUT3VrfXQS3lVE21CLw23E_I7BOm1Ge8KTE9tq4OLXTwJUqG1jOzTd3gIxwiHmY11LI50eBTsKIky8yA5z_6sy61oomQK1ZuuLkZqMB-qNP1j4XxSNOp8CiscLlaQ5FAKmOlvlw24ed8vG3Np5huwt2UjEpBuNg8RSMwBhtZZukzgx93BFC8hjzLva7uPIqX6Qh1l8xIoOqs1-nalpL-_HD9-25yGSbRHB270WTucwbhF9Pk6j505HSuG5bIbPX5h5b-diRK0AUhsU8mpD1Xn5hxww1ieu-dfMD7dcZ0tOGW3gBp7I_UJ2UUkK7ctBqCTfZ5QeVqzdSLUU2w8Xe2aC1HjiiRNs0V7zVqlZcGVjWE9OsYxJ-IQ9t8kxsuRTHX6SbDYVeqs4LkH64zpF50OKlAO_NOm4SBAj-MGffua_6wyX7gqkDTApVSFXSxXYOUIbrVKgHZBDKXAIS70JIB6Ce6BA3kbFu2_jpqP232yqGx0drnodK54Qv0S80krmz34iVrsaq1pmUbzSewFljUHmqu2RGp8QetVncZeqwxjdFBkQCE4ioX7MpGoFnajl7UGp9HMWuP1ylUbcWXXIfX-CMnlyemH1tgFOyiChp1yw3uVIfFJ8wb-grqn96vHKbuTuZL-KvqpyYE56AP4pZUcgOmShgkpVgMp_YMCqq0uYbTIH1h1-xCtcCw6dwP8GOUsF1peT5k3FzHZWfRF2rhmS5MU92djpais4O4chsS9BE2gFAaxSG6lICnMF65xfnk2-eFsVR1a44r1cwliTCPcqoEGatBKdYEAfKX1nEivNLyZi-xw5X6-8JsyyNISAZHGodqzCRibYxtF5MDGuxrGT2q_ba6ZsxojSpgrhNIVrvf4tTu4sxmt_kTifQOvm4cLDMUIIVEvYS8Kw',
+          year: 2026,
+          image: '/items/papers/Iguanas.png',
+          aspect: 1.0928,
+        },
+        {
+          title: 'Core rumen microbes are functional generalists that sustain host metabolism and gut ecosystem function',
+          href: 'https://www.nature.com/articles/s41559-025-02904-3.pdf',
+          year: 2025,
+          image: '/items/papers/Core.png',
+          aspect: 1.297,
+        },
+        {
+          title:
+            'ProFiT-SPEci-FISH: a novel approach for linking plasmids to hosts in complex microbial communities at the single-cell level',
+          href: 'https://link.springer.com/article/10.1186/s40168-025-02238-z',
+          year: 2025,
+          image: '/items/papers/Plasmidmethod.png',
+          aspect: 0.7734,
+        },
+        {
+          title: 'Cryptic diversity of cellulose-degrading gut bacteria in industrialized humans',
+          href: 'https://www.science.org/doi/10.1126/science.adj9223',
+          year: 2024,
+          image: '/items/papers/science.png',
+          aspect: 1.777,
+        },
+        {
+          title: 'Plasmid-encoded toxin defence mediates mutualistic microbial interactions',
+          href: 'https://www.nature.com/articles/s41564-023-01521-9',
+          year: 2024,
+          image: '/items/papers/plasmidtoxins.png',
+          aspect: 0.8638,
+        },
+        {
+          title: 'The neural basis of imagination: An evolutionary perspective',
+          href: 'https://www.sciencedirect.com/science/article/pii/S014976342600045X',
+          year: 2026,
+          image: '/items/papers/dmn.png',
+          aspect: 1.0255,
+        },
+        {
+          title: 'The evolutionary origins of the Global Neuronal Workspace in vertebrates',
+          href: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC10499063/',
+          year: 2023,
+          image: '/items/papers/oryan1.png',
+          aspect: 1.0888,
+        },
       ],
     },
   },
