@@ -24,7 +24,10 @@ const _easedPos = new THREE.Vector3()
 // whole-tunnel approaches, this can't blow up into a large, scene-breaking
 // shift regardless of scroll position, since it never depends on distance
 // to any particular piece of content. Desktop is completely untouched.
-const MOBILE_BREAKPOINT = 640
+// Exported: TunnelContent's Beat3D needs the same threshold, to know when to
+// apply its own exact-math centering correction unconditionally rather than
+// only for the click-focused beat (see its own comment for why).
+export const MOBILE_BREAKPOINT = 640
 const MOBILE_CAMERA_SHIFT = 11.7
 
 // NOTE: a "focus mode" experiment once lived here — blending the look target

@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
+import { MOBILE_BREAKPOINT } from './CameraRig'
 import { pointAt } from './curve'
 import { focusState } from '../lib/scroll'
 import { BEATS, BeatContent, type Beat } from '../ui/WorldContent'
@@ -28,6 +29,16 @@ const NEAR_LO = 45 // fully gone (exited past you)
 // an earlier attempt that overrode the camera's look direction and broke the
 // "is this beat behind me yet" visibility check for every OTHER beat. Beyond
 // FOCUS_CLEAR_DIST (after having arrived once), focus releases automatically.
+//
+// On mobile this same correction also applies to EVERY beat, focused or not
+// (see the mobile branch below) — CameraRig's MOBILE_CAMERA_SHIFT nudges the
+// camera itself sideways by a fixed world-unit amount to fix content reading
+// shifted-right on narrow portraits, but that fix isn't distance-compensated
+// (a constant camera-space offset maps to a different screen-space offset at
+// every distance), so without this, any beat you scroll toward rather than
+// click lands visibly off-centre — only the explicitly-focused one got
+// re-centred before. Desktop has no such camera shift, so it keeps the
+// original focus-only behaviour unchanged.
 const FOCUS_BLEND_FAR = 700
 const FOCUS_BLEND_NEAR = 280
 const FOCUS_CLEAR_DIST = 900
@@ -40,12 +51,24 @@ const _correctedPos = new THREE.Vector3()
 let _lastFocusA: number | null = null
 let _focusArrived = false
 
+// The exact-math centering nudge shared by both branches below: pos in
+// camera-local space, its local X IS the lateral (screen-x) offset in world
+// units at this depth. Shifting the point by -localX along the camera's own
+// right vector zeroes that component out, landing it dead-centre regardless
+// of depth, FOV, or aspect ratio.
+function centeredPos(camera: THREE.Camera, pos: THREE.Vector3, proximity: number) {
+  _localPos.copy(pos).applyMatrix4(camera.matrixWorldInverse)
+  _right.setFromMatrixColumn(camera.matrixWorld, 0).normalize()
+  _correctedPos.copy(pos).addScaledVector(_right, -_localPos.x * proximity)
+  return _correctedPos
+}
+
 function Beat3D({ beat }: { beat: Beat }) {
   const pos = useMemo(() => pointAt(beat.a), [beat.a])
   const ref = useRef<HTMLDivElement>(null)
   const groupRef = useRef<THREE.Group>(null)
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera, size }) => {
     const el = ref.current
     const group = groupRef.current
     if (!el || !group) return
@@ -77,15 +100,15 @@ function Beat3D({ beat }: { beat: Beat }) {
         _lastFocusA = null
         _focusArrived = false
       } else if (proximity > 0) {
-        // pos in camera-local space: its local X IS the lateral (screen-x)
-        // offset in world units at this depth. Shifting the point by
-        // -localX along the camera's own right vector zeroes that
-        // component out, landing it dead-centre regardless of depth, FOV,
-        // or aspect ratio — exact math, not an approximation.
-        _localPos.copy(pos).applyMatrix4(camera.matrixWorldInverse)
-        _right.setFromMatrixColumn(camera.matrixWorld, 0).normalize()
-        _correctedPos.copy(pos).addScaledVector(_right, -_localPos.x * proximity)
-        group.position.copy(_correctedPos)
+        group.position.copy(centeredPos(camera, pos, proximity))
+        corrected = true
+      }
+    } else if (size.width < MOBILE_BREAKPOINT) {
+      // Mobile: apply the same correction to every beat unconditionally, not
+      // just the focused one (see the comment above for why).
+      const proximity = smoothstep(FOCUS_BLEND_FAR, FOCUS_BLEND_NEAR, d)
+      if (proximity > 0) {
+        group.position.copy(centeredPos(camera, pos, proximity))
         corrected = true
       }
     }
