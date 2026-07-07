@@ -99,19 +99,25 @@ function placeSketches(): PlacedSketch[] {
  * focusState-gated drag), so it can't be grabbed by a stray click while
  * still flying toward it. */
 function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
-  const { camera } = useThree()
+  const { camera, gl } = useThree()
   const groupRef = useRef<THREE.Group>(null)
   const draggingRef = useRef(false)
   const dragPlane = useRef(new THREE.Plane())
   const dragOffset = useRef(new THREE.Vector3())
   const hitPoint = useRef(new THREE.Vector3())
   const camForward = useRef(new THREE.Vector3())
+  const raycaster = useRef(new THREE.Raycaster())
+  const ndc = useRef(new THREE.Vector2())
   // Cumulative pointer travel this press, in screen px — tells a plain click
   // (both halves of a double-click included) apart from an actual drag, so a
   // double-click's own two pointerup events don't reset enlargedRef before
   // onDoubleClick ever gets to read it.
   const movedRef = useRef(0)
   const downClientPos = useRef({ x: 0, y: 0 })
+  // Bound per-press so add/removeEventListener target the exact same
+  // function reference; recreated fresh each pointerdown.
+  const windowMoveHandler = useRef<((e: PointerEvent) => void) | null>(null)
+  const windowUpHandler = useRef<(() => void) | null>(null)
 
   // Eased toward by the useFrame below whenever not actively being dragged
   // (dragging writes group.position directly for 1:1 tracking, and keeps
@@ -131,38 +137,31 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
     group.scale.setScalar(scale)
   })
 
-  const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
-    if (!detourState.active) return
-    e.stopPropagation()
+  // Drags to wherever the ray (from clientX/clientY, cast manually) hits the
+  // drag plane. Used by the window-level move handler below, NOT R3F's own
+  // per-mesh onPointerMove — see the onPointerDown comment for why.
+  const dragToClientPoint = (clientX: number, clientY: number) => {
     const group = groupRef.current
     if (!group) return
-    ;(e.target as Element).setPointerCapture?.(e.pointerId)
-    draggingRef.current = true
-    movedRef.current = 0
-    downClientPos.current = { x: e.clientX, y: e.clientY }
-    camera.getWorldDirection(camForward.current)
-    dragPlane.current.setFromNormalAndCoplanarPoint(camForward.current, group.position)
-    if (e.ray.intersectPlane(dragPlane.current, hitPoint.current)) {
-      dragOffset.current.copy(group.position).sub(hitPoint.current)
-    }
-    group.position.y += PILE_LIFT // pop above the rest of the pile while it's "picked up"
-    targetPos.current.copy(group.position)
-  }
-  const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
-    if (!draggingRef.current) return
-    movedRef.current = Math.max(
-      movedRef.current,
-      Math.hypot(e.clientX - downClientPos.current.x, e.clientY - downClientPos.current.y),
-    )
-    const group = groupRef.current
-    if (!group) return
-    if (e.ray.intersectPlane(dragPlane.current, hitPoint.current)) {
+    const rect = gl.domElement.getBoundingClientRect()
+    ndc.current.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1)
+    raycaster.current.setFromCamera(ndc.current, camera)
+    if (raycaster.current.ray.intersectPlane(dragPlane.current, hitPoint.current)) {
       group.position.copy(hitPoint.current).add(dragOffset.current)
       targetPos.current.copy(group.position)
     }
   }
-  const onPointerUp = () => {
+  const endDrag = () => {
     draggingRef.current = false
+    if (windowMoveHandler.current) {
+      window.removeEventListener('pointermove', windowMoveHandler.current)
+      windowMoveHandler.current = null
+    }
+    if (windowUpHandler.current) {
+      window.removeEventListener('pointerup', windowUpHandler.current)
+      window.removeEventListener('pointercancel', windowUpHandler.current)
+      windowUpHandler.current = null
+    }
     // Only a REAL drag implicitly "puts it down" (next double-click starts a
     // fresh enlarge from wherever it just landed) — a plain click's release
     // must leave enlargedRef alone, since both halves of a double-click also
@@ -175,6 +174,51 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
       restorePos.current.copy(group.position)
       restoreScale.current = group.scale.x
     }
+  }
+  const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
+    if (!detourState.active) return
+    e.stopPropagation()
+    // Move/up tracking happens via plain window-level listeners below, NOT
+    // R3F's own onPointerMove/onPointerUp props — R3F's per-mesh pointer
+    // "capture" (event.target.setPointerCapture, its own shim, not the DOM's,
+    // since event.target here is a three.js object, not an Element) doesn't
+    // reliably keep routing events to this mesh for TOUCH-origin pointers.
+    // Window listeners don't depend on R3F's raycast-based routing at all, so
+    // they keep tracking regardless of pointer type. (canvas touch-action is
+    // set to 'none' persistently while parked at the pile — see useTouchActionForDrag
+    // below — NOT reactively here, which is one gesture too late: Chrome
+    // decides at touchstart whether a touch is a pan/zoom gesture or a
+    // "pointer" one based on the touch-action value already in effect, then
+    // fires pointercancel if it picked pan/zoom, so setting it after the
+    // pointerdown already fired never arrives in time.)
+    e.nativeEvent.preventDefault()
+    const group = groupRef.current
+    if (!group) return
+    draggingRef.current = true
+    movedRef.current = 0
+    downClientPos.current = { x: e.clientX, y: e.clientY }
+    camera.getWorldDirection(camForward.current)
+    dragPlane.current.setFromNormalAndCoplanarPoint(camForward.current, group.position)
+    if (e.ray.intersectPlane(dragPlane.current, hitPoint.current)) {
+      dragOffset.current.copy(group.position).sub(hitPoint.current)
+    }
+    group.position.y += PILE_LIFT // pop above the rest of the pile while it's "picked up"
+    targetPos.current.copy(group.position)
+
+    const onMove = (ev: PointerEvent) => {
+      ev.preventDefault()
+      movedRef.current = Math.max(
+        movedRef.current,
+        Math.hypot(ev.clientX - downClientPos.current.x, ev.clientY - downClientPos.current.y),
+      )
+      dragToClientPoint(ev.clientX, ev.clientY)
+    }
+    const onUp = () => endDrag()
+    windowMoveHandler.current = onMove
+    windowUpHandler.current = onUp
+    window.addEventListener('pointermove', onMove, { passive: false })
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
   }
   const onDoubleClick = (e: ThreeEvent<MouseEvent>) => {
     if (!detourState.active) return
@@ -196,14 +240,7 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
   return (
     <group ref={groupRef} position={[s.x, s.y, s.z]}>
       <Billboard>
-        <mesh
-          rotation={[0, 0, s.roll]}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerOut={onPointerUp}
-          onDoubleClick={onDoubleClick}
-        >
+        <mesh rotation={[0, 0, s.roll]} onPointerDown={onPointerDown} onDoubleClick={onDoubleClick}>
           <planeGeometry args={[s.size * s.aspect, s.size]} />
           <meshBasicMaterial
             map={tex}
@@ -219,6 +256,28 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
   )
 }
 
+/** Canvas touch-action must already be 'none' by the time a touch STARTS for
+ * Chrome to treat it as a draggable pointer gesture rather than a native pan/
+ * pinch-zoom one — setting it reactively inside a mesh's onPointerDown is one
+ * gesture too late (that decision is already made by the time the pointerdown
+ * handler runs, so the browser hands the rest of the gesture to native pan/
+ * zoom and fires pointercancel; confirmed via logging touchmove continuing
+ * to fire raw touch events long after pointermove had stopped). So this is
+ * toggled persistently for the whole time the pile is the active detour
+ * (not tied to any individual drag), which also happens to block the
+ * pinch-to-zoom-out gesture that used to escape the pile entirely. Polls
+ * detourState.active the same way Scene.tsx's `inPile` bloom/noise fade does. */
+function useTouchActionForDrag() {
+  const { gl } = useThree()
+  const activeRef = useRef(false)
+  useFrame(() => {
+    if (detourState.active !== activeRef.current) {
+      activeRef.current = detourState.active
+      gl.domElement.style.touchAction = activeRef.current ? 'none' : ''
+    }
+  })
+}
+
 /** The sketchbook page pile, scattered at the loop's centre (PILE_CENTER) —
  * an off-curve location reached via the "detour" camera state, triggered by
  * clicking the hub banner's floater photo (see WorldContent.tsx). Each page
@@ -227,6 +286,7 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
 export function ImagePile() {
   const textures = useTexture(SKETCH_FILES.map((f) => `/items/sketchbook/${f}`))
   const placed = useMemo(placeSketches, [])
+  useTouchActionForDrag()
 
   return (
     <group position={PILE_CENTER}>

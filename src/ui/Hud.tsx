@@ -59,15 +59,35 @@ export function Hud() {
     <div className="pointer-events-none fixed inset-0 z-10 select-none">
       {/* Only shown while parked at the sketchbook pile (see lib/scroll.ts's
           detourState) — scrolling also exits (App.tsx's wheel listener), but
-          touch has no equivalent (indistinguishable from dragging a photo),
-          so this is the only exit affordance on mobile. */}
+          touch has no equivalent (indistinguishable from dragging a photo).
+          Desktop only here (top-center, sm and up) — on mobile this collides
+          with the top-left name block at narrower widths (both sit in the
+          same top row), so mobile gets its own separate button below instead. */}
       <div
-        className="absolute left-1/2 top-4 -translate-x-1/2 transition-opacity duration-500 sm:top-8"
+        className="absolute left-1/2 top-8 hidden -translate-x-1/2 transition-opacity duration-500 sm:block"
         style={{ opacity: inPile ? 1 : 0, pointerEvents: inPile ? 'auto' : 'none' }}
       >
         <button
           onClick={exitPileDetour}
-          className="hover-glow pointer-events-auto flex items-center gap-2 font-mono text-xs tracking-[0.2em] text-[#e8e0cf]/80 uppercase sm:text-sm"
+          className="hover-glow pointer-events-auto flex items-center gap-2 font-mono text-sm tracking-[0.2em] text-[#e8e0cf]/80 uppercase"
+        >
+          ← Back
+        </button>
+      </div>
+
+      {/* Mobile-only equivalent — bottom-right, clear of the bottom-left
+          chapter rail and the top row's name/world-label clutter. A pinch/
+          2-finger gesture used to fall through to native browser zoom-out
+          here (no dedicated exit besides scroll, title-click, or Esc — none
+          obvious on a touch device), so this gives mobile an explicit, always-
+          reachable way out of the pile. */}
+      <div
+        className="absolute bottom-6 right-4 transition-opacity duration-500 sm:hidden"
+        style={{ opacity: inPile ? 1 : 0, pointerEvents: inPile ? 'auto' : 'none' }}
+      >
+        <button
+          onClick={exitPileDetour}
+          className="hover-glow pointer-events-auto flex items-center gap-2 font-mono text-xs tracking-[0.2em] text-[#e8e0cf]/80 uppercase"
         >
           ← Back
         </button>
