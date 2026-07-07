@@ -350,7 +350,7 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
           accent={accent}
         />
       )}
-      <div className="mt-6 flex items-baseline justify-start gap-3">
+      <div className="mt-4 flex items-baseline justify-start gap-3">
         <span className="font-mono text-xl tracking-tight text-[#f2ecdd] sm:text-5xl">{p.name}</span>
         {p.href && (
           <span className="font-mono text-base sm:text-2xl" style={{ color: accent }}>
@@ -358,15 +358,15 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
           </span>
         )}
       </div>
-      <div className="mt-4 space-y-2">
+      <div className="mt-2 space-y-1">
         {sentences.map((s, i) => {
-          // Two paragraphs specifically: the second flips to the window's
-          // right edge instead of stacking under the first on the left.
-          const alignRight = sentences.length === 2 && i === 1
+          // Only the first paragraph stays left — every one after it flips to
+          // the window's right edge instead of stacking left underneath.
+          const alignRight = i > 0
           return (
             <p
               key={i}
-              className={`max-w-[54rem] text-base leading-relaxed text-[#e8e0cf]/85 sm:text-3xl ${
+              className={`max-w-[54rem] text-base leading-snug text-[#e8e0cf]/85 sm:text-3xl ${
                 alignRight ? 'ml-auto text-right' : ''
               }`}
               style={{ textShadow: '0 1px 14px rgba(0,0,0,0.95)' }}
@@ -378,8 +378,15 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
       </div>
     </>
   )
-  const cls =
-    'block w-[94vw] max-w-[480px] -translate-y-[15px] text-left sm:w-[1320px] sm:max-w-none sm:-translate-y-[30px]'
+  const cls = 'block w-[94vw] max-w-[480px] text-left sm:w-[1320px] sm:max-w-none'
+  // Right-aligning every paragraph after the first (above) makes a 3-sentence
+  // blurb reach far enough down to collide with the bottom chapter nav, since
+  // that text now sits under it instead of off to the left. junk_is has more
+  // spare room at the top than the bottom, so lift 3+-sentence blurbs extra to
+  // spend that headroom instead of shifting every project by the same amount.
+  const mobile = typeof window !== 'undefined' && window.innerWidth < 640
+  const lift = (mobile ? 15 : 30) + (sentences.length >= 3 ? (mobile ? 20 : 45) : 0)
+  const liftStyle = { transform: `translateY(-${lift}px)` }
   return p.href ? (
     <a
       href={p.href}
@@ -387,11 +394,12 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
       rel="noreferrer"
       onClick={(e) => handleBeatClick(a, true, e, projectBackoffT())}
       className={`${cls} transition-opacity hover:opacity-80`}
+      style={liftStyle}
     >
       {inner}
     </a>
   ) : (
-    <div className={cls} onClick={(e) => handleBeatClick(a, false, e, projectBackoffT())}>
+    <div className={cls} onClick={(e) => handleBeatClick(a, false, e, projectBackoffT())} style={liftStyle}>
       {inner}
     </div>
   )
