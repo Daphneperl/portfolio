@@ -30,13 +30,20 @@ export const BEATS: Beat[] = WORLDS.flatMap((w) => {
     return [{ key: w.id, kind: 'panel', intro, accent: w.accent, a: s + 0.5 * span }]
   }
   const list: Beat[] = [{ key: `${w.id}-banner`, kind: 'panel', intro, accent: w.accent, a: s + 0.12 * span }]
+  // Spread evenly between PROJECT_START and PROJECT_END regardless of count,
+  // so adding/removing a project never needs the spacing retuned by hand —
+  // 2 projects land exactly where the old fixed 0.38/0.32 step put them.
+  const PROJECT_START = 0.38
+  const PROJECT_END = 0.7
   projects.forEach((p, i) => {
+    const frac =
+      projects.length > 1 ? PROJECT_START + ((PROJECT_END - PROJECT_START) * i) / (projects.length - 1) : PROJECT_START
     list.push({
       key: `${w.id}-${p.name}`,
       kind: 'project',
       project: p,
       accent: w.accent,
-      a: s + (0.38 + i * 0.32) * span,
+      a: s + frac * span,
     })
   })
   return list

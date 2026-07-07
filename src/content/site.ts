@@ -73,6 +73,15 @@ export const CONTENT: Record<WorldId, WorldContent> = {
           gif: '/memory.gif',
           aspect: '916 / 480',
         },
+        {
+          name: 'in-silico-synthesizer',
+          title: 'in-silico-synthesizer',
+          blurb:
+            'Built for a future exhibition exploring microbial worlds — celebrating the invisible universe of bacteria, viruses, and the microbiome. This interactive page is a synthesizer controlled by multiplying microbes, a metaphor for the complex microbial interplay within environments.',
+          href: 'https://in-silico.vercel.app/',
+          gif: '/in-silico.gif',
+          aspect: '800 / 416',
+        },
       ],
     },
   },
