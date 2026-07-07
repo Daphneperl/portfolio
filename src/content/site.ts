@@ -43,7 +43,8 @@ export const CONTENT: Record<WorldId, WorldContent> = {
       wide: true,
       floater: '/floating-daph.png',
       lines: [
-        'A designer, developer, artist and scientist. I love building things, using modern tools to create environments, nostalgic worlds, and help turn complex technical endeavors into captivating visual stories.',
+        'A designer, developer, artist and scientist.',
+        'I love building things, using modern tools to create environments, nostalgic worlds, and help turn complex technical endeavors into captivating visual stories.',
         'Scroll to travel through my world...',
       ],
     },
