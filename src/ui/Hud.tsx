@@ -36,10 +36,23 @@ export function Hud() {
   const active = worldAt(progress)
 
   const jump = (id: WorldId) => {
+    // While parked at the sketchbook pile, the nav's normal per-world jump
+    // doesn't make sense (the camera isn't following the curve at all right
+    // now) — just leave the pile instead, same as the back button. Since
+    // scrollState.progress hasn't moved during the detour, this already
+    // lands back on the About Me banner it was entered from.
+    if (detourState.active) {
+      exitPileDetour()
+      return
+    }
     // land a fixed distance BEFORE the banner (still approaching, fully lit) —
     // not at its exact anchor, which collapses to "just behind you" (invisible).
     focusState.a = BANNER_ANCHOR[id] // TunnelContent nudges just the banner onto the camera axis once close
     scrollToProgress(JUMP_ANCHOR[id])
+  }
+
+  const exitPileOrNoop = () => {
+    if (detourState.active) exitPileDetour()
   }
 
   return (
@@ -62,13 +75,25 @@ export function Hud() {
 
       {/* top-left: identity — name/tagline/email fade together while the
           "About Me" banner (which already says this) is on screen, back in
-          once you scroll past it. Mobile-first: smaller text/tighter margin
+          once you scroll past it (or while parked at the sketchbook pile,
+          where clicking the title doubles as another way back out — activeId
+          is still 'hub' there since scrollState.progress hasn't moved, so
+          that condition alone would otherwise keep this hidden the whole
+          time you're at the pile). Mobile-first: smaller text/tighter margin
           at the base, current desktop sizing restored unchanged at sm: and up. */}
       <div
         className="absolute left-4 top-4 max-w-[45vw] font-mono text-sm tracking-widest text-[#e8e0cf]/80 transition-opacity duration-700 ease-out sm:left-8 sm:top-8 sm:max-w-none sm:text-base"
-        style={{ opacity: activeId === 'hub' ? 0 : 1, pointerEvents: activeId === 'hub' ? 'none' : 'auto' }}
+        style={{
+          opacity: activeId === 'hub' && !inPile ? 0 : 1,
+          pointerEvents: activeId === 'hub' && !inPile ? 'none' : 'auto',
+        }}
       >
-        <div className="text-base text-[#e8e0cf] sm:text-xl">DAPHNE PERLMAN</div>
+        <div
+          className={inPile ? 'hover-glow cursor-pointer text-base text-[#e8e0cf] sm:text-xl' : 'text-base text-[#e8e0cf] sm:text-xl'}
+          onClick={inPile ? exitPileOrNoop : undefined}
+        >
+          DAPHNE PERLMAN
+        </div>
         <div className="text-xs text-[#e8e0cf]/50 sm:text-sm">designer · dev · artist · Scientist</div>
         <a
           href="mailto:tech@citizencafetlv.com"

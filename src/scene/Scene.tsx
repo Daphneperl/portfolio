@@ -57,10 +57,15 @@ export function Scene() {
   )
 }
 
+const BACKGROUND_INTENSITY = 0.28
+const BACKGROUND_INTENSITY_IN_PILE = 0.05
+
 /**
  * Fixed background image at ~50% strength over the dark scene. `backgroundIntensity`
  * halves the texture so it reads as a dimmed layer on the dark base; it fills the
  * screen and doesn't move with scroll, so it's consistent the whole way through.
+ * Dimmed further while parked at the sketchbook pile so the pages read clearly
+ * against a darker backdrop instead of competing with the patterned texture.
  */
 function Background() {
   const tex = useTexture('/textures/Background.png')
@@ -70,6 +75,9 @@ function Background() {
   // Dimmed hard during the CRT pivot so it wouldn't fight the grid + accent;
   // brought back up a bit — still reads as a culture behind the void, not a
   // loud field, but more visible than before.
-  scene.backgroundIntensity = 0.28
+  scene.backgroundIntensity = BACKGROUND_INTENSITY
+  useFrame(() => {
+    scene.backgroundIntensity = detourState.active ? BACKGROUND_INTENSITY_IN_PILE : BACKGROUND_INTENSITY
+  })
   return null
 }

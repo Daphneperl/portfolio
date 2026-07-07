@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react'
-import { type ThreeEvent, useThree } from '@react-three/fiber'
+import { type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { Billboard, useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { detourState } from '../lib/scroll'
@@ -36,6 +36,9 @@ const PILE_SCATTER_RADIUS = 85 // how far from centre pages can land, in world u
 const PILE_BASE_SIZE = 68 // long-edge size of a page, world units
 const PILE_LIFT = 3 // extra height a page pops to once you've picked it up
 const PILE_MAX_ROLL = (10 * Math.PI) / 180 // "crooked, but only 10deg either way"
+const PILE_ENLARGE_SCALE = 1.9 // double-click "bring to front" size multiplier
+const PILE_ENLARGE_LERP_TO_CAMERA = 0.5 // how far toward the camera it pulls, 0..1
+const PILE_LERP_SPEED = 0.18 // per-frame ease toward the enlarge/restore target
 
 interface PlacedSketch {
   file: string
@@ -65,15 +68,18 @@ function placeSketches(): PlacedSketch[] {
   })
 }
 
-/** One draggable sketchbook page in the pile — always facing the camera dead
- * on (drei's Billboard) like a regular flat image, just held slightly
- * crooked (+/-10deg roll around the view axis). Real independent world
- * positions still give the pile genuine depth/parallax as the camera flies
- * in; only the ORIENTATION is locked to face you, not the position. Dragging
- * slides it around a plane parallel to the camera at its own current depth —
- * matches how it looks (a flat photo held up in front of you), not the
- * world-horizontal "table" a lying-flat version would use. Only draggable
- * once the pile is actually the parked detour (mirrors the papers carousel's
+/** One draggable, double-clickable sketchbook page in the pile — always
+ * facing the camera dead on (drei's Billboard) like a regular flat image,
+ * just held slightly crooked (+/-10deg roll around the view axis). Real
+ * independent world positions still give the pile genuine depth/parallax as
+ * the camera flies in; only the ORIENTATION is locked to face you, not the
+ * position. Dragging slides it around a plane parallel to the camera at its
+ * own current depth — matches how it looks (a flat photo held up in front of
+ * you), not the world-horizontal "table" a lying-flat version would use.
+ * Double-click toggles "bring to front": pulls it partway toward the camera
+ * and scales it up, eased in over a few frames; double-click again (or drag
+ * it away) returns it to wherever it was beforehand. Only interactive once
+ * the pile is actually the parked detour (mirrors the papers carousel's
  * focusState-gated drag), so it can't be grabbed by a stray click while
  * still flying toward it. */
 function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
@@ -84,6 +90,24 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
   const dragOffset = useRef(new THREE.Vector3())
   const hitPoint = useRef(new THREE.Vector3())
   const camForward = useRef(new THREE.Vector3())
+
+  // Eased toward by the useFrame below whenever not actively being dragged
+  // (dragging writes group.position directly for 1:1 tracking, and keeps
+  // these targets in sync so a double-click right after a drag enlarges/
+  // restores from the correct spot instead of fighting the drag on release).
+  const targetPos = useRef(new THREE.Vector3(s.x, s.y, s.z))
+  const targetScale = useRef(1)
+  const enlargedRef = useRef(false)
+  const restorePos = useRef(new THREE.Vector3(s.x, s.y, s.z))
+  const restoreScale = useRef(1)
+
+  useFrame(() => {
+    const group = groupRef.current
+    if (!group || draggingRef.current) return
+    group.position.lerp(targetPos.current, PILE_LERP_SPEED)
+    const scale = THREE.MathUtils.lerp(group.scale.x, targetScale.current, PILE_LERP_SPEED)
+    group.scale.setScalar(scale)
+  })
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (!detourState.active) return
@@ -98,6 +122,7 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
       dragOffset.current.copy(group.position).sub(hitPoint.current)
     }
     group.position.y += PILE_LIFT // pop above the rest of the pile while it's "picked up"
+    targetPos.current.copy(group.position)
   }
   const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
     if (!draggingRef.current) return
@@ -105,10 +130,35 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
     if (!group) return
     if (e.ray.intersectPlane(dragPlane.current, hitPoint.current)) {
       group.position.copy(hitPoint.current).add(dragOffset.current)
+      targetPos.current.copy(group.position)
     }
   }
   const onPointerUp = () => {
     draggingRef.current = false
+    // Dragging it away implicitly "puts it down" — next double-click starts
+    // a fresh enlarge from wherever it just landed, not the old pile slot.
+    enlargedRef.current = false
+    const group = groupRef.current
+    if (group) {
+      restorePos.current.copy(group.position)
+      restoreScale.current = group.scale.x
+    }
+  }
+  const onDoubleClick = (e: ThreeEvent<MouseEvent>) => {
+    if (!detourState.active) return
+    e.stopPropagation()
+    const group = groupRef.current
+    if (!group) return
+    if (!enlargedRef.current) {
+      restorePos.current.copy(group.position)
+      restoreScale.current = group.scale.x
+      targetPos.current.copy(group.position).lerp(camera.position, PILE_ENLARGE_LERP_TO_CAMERA)
+      targetScale.current = PILE_ENLARGE_SCALE
+    } else {
+      targetPos.current.copy(restorePos.current)
+      targetScale.current = restoreScale.current
+    }
+    enlargedRef.current = !enlargedRef.current
   }
 
   return (
@@ -120,6 +170,7 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerOut={onPointerUp}
+          onDoubleClick={onDoubleClick}
         >
           <planeGeometry args={[s.size * s.aspect, s.size]} />
           <meshBasicMaterial map={tex} side={THREE.DoubleSide} toneMapped={false} fog={false} />

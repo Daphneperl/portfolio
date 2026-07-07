@@ -34,6 +34,16 @@ export default function App() {
     return () => window.removeEventListener('wheel', exitOnScroll)
   }, [])
 
+  // Esc is another way out of the pile, alongside scroll and the Hud's back
+  // button/nav shortcuts.
+  useEffect(() => {
+    const exitOnEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && detourState.active) exitPileDetour()
+    }
+    window.addEventListener('keydown', exitOnEscape)
+    return () => window.removeEventListener('keydown', exitOnEscape)
+  }, [])
+
   return (
     <>
       {/* fixed 3D layer */}

@@ -672,13 +672,17 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
       target="_blank"
       rel="noreferrer"
       onClick={(e) => handleBeatClick(a, true, e, projectBackoffT())}
-      className={`${cls} transition-opacity hover:opacity-80`}
+      className={`${cls} project-window-link`}
       style={liftStyle}
     >
       {inner}
     </a>
   ) : (
-    <div className={cls} onClick={(e) => handleBeatClick(a, false, e, projectBackoffT())} style={liftStyle}>
+    <div
+      className={`${cls} project-window-link`}
+      onClick={(e) => handleBeatClick(a, false, e, projectBackoffT())}
+      style={liftStyle}
+    >
       {inner}
     </div>
   )
@@ -758,7 +762,7 @@ function GlassPanel({
       {intro.floater && (
         <div
           className="hover-glow pointer-events-auto absolute right-[20px] top-[-140px] cursor-pointer sm:right-[40px] sm:top-[-220px]"
-          style={{ color: accent }}
+          style={{ color: '#e8622a' }}
           onClick={(e) => {
             // Stop it bubbling to the panel's own onClick, which would
             // otherwise also re-trigger this beat's scroll-to-self focus.
