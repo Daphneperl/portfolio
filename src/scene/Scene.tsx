@@ -1,5 +1,5 @@
-import { Suspense, useRef, type ReactNode } from 'react'
-import { useThree, useFrame } from '@react-three/fiber'
+import { Suspense } from 'react'
+import { useThree } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { EffectComposer, Noise, Vignette, Bloom } from '@react-three/postprocessing'
@@ -7,9 +7,6 @@ import { BlendFunction } from 'postprocessing'
 import { CameraRig } from './CameraRig'
 import { Tunnel } from './Tunnel'
 import { TunnelContent } from './TunnelContent'
-import { scrollState } from '../lib/scroll'
-import { pointAt } from './curve'
-import { BEATS } from '../ui/WorldContent'
 
 const FOG_COLOR = '#0f2b18' // forest-green haze so distance blends into the void
 
@@ -24,10 +21,8 @@ export function Scene() {
 
       <Suspense fallback={null}>
         <Background />
-        <MobileRecenter>
-          <Tunnel />
-          <TunnelContent />
-        </MobileRecenter>
+        <Tunnel />
+        <TunnelContent />
       </Suspense>
 
       <CameraRig />
@@ -62,57 +57,4 @@ function Background() {
   // loud field, but more visible than before.
   scene.backgroundIntensity = 0.28
   return null
-}
-
-const MOBILE_BREAKPOINT = 640
-const _nearestPos = new THREE.Vector3()
-const _viewSpace = new THREE.Vector3()
-const _right = new THREE.Vector3()
-const _target = new THREE.Vector3()
-
-/** The beat anchor with the smallest wrapped forward distance from `t`. */
-function nearestUpcomingBeatA(t: number): number {
-  let best = BEATS[0]?.a ?? 0
-  let bestDist = Infinity
-  for (const b of BEATS) {
-    let d = b.a - t
-    if (d < 0) d += 1
-    if (d < bestDist) {
-      bestDist = d
-      best = b.a
-    }
-  }
-  return best
-}
-
-/**
- * Mobile only: rigidly shifts the WHOLE tunnel (grid + all content, as one
- * group) so the nearest upcoming beat is dead-centre on screen. The tunnel
- * curves, so content centred independently of the grid (which keeps curving
- * off toward its own vanishing direction) breaks the "exiting the tunnel"
- * illusion — shifting them together keeps the grid's vanishing point and the
- * content it frames always visually consistent. Desktop's established
- * behaviour (content converges naturally, not forced to dead-centre) is
- * untouched — the shift eases to zero above the breakpoint.
- */
-function MobileRecenter({ children }: { children: ReactNode }) {
-  const groupRef = useRef<THREE.Group>(null)
-
-  useFrame(({ camera, size }) => {
-    const grp = groupRef.current
-    if (!grp) return
-
-    if (size.width < MOBILE_BREAKPOINT) {
-      const a = nearestUpcomingBeatA(scrollState.progress)
-      pointAt(a, _nearestPos)
-      _viewSpace.copy(_nearestPos).applyMatrix4(camera.matrixWorldInverse)
-      _right.setFromMatrixColumn(camera.matrixWorld, 0).normalize()
-      _target.copy(_right).multiplyScalar(-_viewSpace.x)
-    } else {
-      _target.set(0, 0, 0)
-    }
-    grp.position.lerp(_target, 0.15)
-  })
-
-  return <group ref={groupRef}>{children}</group>
 }
