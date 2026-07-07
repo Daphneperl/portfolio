@@ -41,22 +41,19 @@ export function Hud() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-10 select-none">
-      {/* top-left: identity — name/tagline fade out while the "Who I Am" banner
-          (which already says this) is on screen, back in once you scroll past
-          it. Email stays put — it's no longer repeated in the banner.
-          Mobile-first: smaller text/tighter margin at the base, current
-          desktop sizing restored unchanged at sm: and up. */}
-      <div className="absolute left-4 top-4 max-w-[45vw] font-mono text-sm tracking-widest text-[#e8e0cf]/80 sm:left-8 sm:top-8 sm:max-w-none sm:text-base">
-        <div
-          className="transition-opacity duration-700 ease-out"
-          style={{ opacity: activeId === 'hub' ? 0 : 1 }}
-        >
-          <div className="text-base text-[#e8e0cf] sm:text-xl">DAPHNE PERLMAN</div>
-          <div className="text-xs text-[#e8e0cf]/50 sm:text-sm">designer · dev · artist · Scientist</div>
-        </div>
+      {/* top-left: identity — name/tagline/email fade together while the
+          "Who I Am" banner (which already says this) is on screen, back in
+          once you scroll past it. Mobile-first: smaller text/tighter margin
+          at the base, current desktop sizing restored unchanged at sm: and up. */}
+      <div
+        className="absolute left-4 top-4 max-w-[45vw] font-mono text-sm tracking-widest text-[#e8e0cf]/80 transition-opacity duration-700 ease-out sm:left-8 sm:top-8 sm:max-w-none sm:text-base"
+        style={{ opacity: activeId === 'hub' ? 0 : 1, pointerEvents: activeId === 'hub' ? 'none' : 'auto' }}
+      >
+        <div className="text-base text-[#e8e0cf] sm:text-xl">DAPHNE PERLMAN</div>
+        <div className="text-xs text-[#e8e0cf]/50 sm:text-sm">designer · dev · artist · Scientist</div>
         <a
           href="mailto:tech@citizencafetlv.com"
-          className="hover-glow pointer-events-auto mt-2 inline-block font-mono text-[10px] tracking-[0.2em] text-[#e8e0cf]/60 uppercase sm:text-xs"
+          className="hover-glow mt-2 inline-block font-mono text-[10px] tracking-[0.2em] text-[#e8e0cf]/60 uppercase sm:text-xs"
         >
           Email ↗
         </a>
