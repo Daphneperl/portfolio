@@ -1,14 +1,22 @@
+import { useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { useLenis } from './lib/scroll'
+import { focusState, useLenis } from './lib/scroll'
 import { Scene } from './scene/Scene'
 import { Hud } from './ui/Hud'
+import { BANNER_ANCHOR, JUMP_ANCHOR } from './ui/WorldContent'
 
 /**
  * The canvas is fixed and full-screen; a tall invisible track behind it gives
  * us something to scroll. Lenis drives scrollState.progress, the scene reads it.
  */
 export default function App() {
-  useLenis()
+  // Open already framed on the hub banner (same landing spot the chapter nav's
+  // "Who I Am" jump uses) instead of the raw t=0 start of the curve, and
+  // pre-focus it so it's exactly centred from the first frame, not just close.
+  useLenis(JUMP_ANCHOR.hub)
+  useEffect(() => {
+    focusState.a = BANNER_ANCHOR.hub
+  }, [])
 
   return (
     <>

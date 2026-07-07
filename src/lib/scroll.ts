@@ -31,8 +31,11 @@ export function scrollToProgress(p: number, duration = 1.6) {
   lenis.scrollTo(Math.max(0, Math.min(1, p)) * lenis.limit, { duration })
 }
 
-/** Mount once at the app root. Drives buttery smooth scroll via Lenis. */
-export function useLenis() {
+/** Mount once at the app root. Drives buttery smooth scroll via Lenis.
+ * `initialProgress`, if given, teleports the scroll there immediately (no
+ * animation) before the first frame renders — used to open the site already
+ * framed on the hub banner instead of at the raw t=0 start of the curve. */
+export function useLenis(initialProgress = 0) {
   useEffect(() => {
     lenis = new Lenis({
       lerp: 0.08, // lower = smoother/heavier inertia. THIS is the feel the original lacked.
@@ -49,6 +52,11 @@ export function useLenis() {
       scrollState.progress = p
       scrollState.velocity = e.velocity
     })
+
+    if (initialProgress > 0) {
+      lenis.scrollTo(initialProgress * lenis.limit, { immediate: true })
+      scrollState.progress = initialProgress // don't wait on the scroll event to reflect it
+    }
 
     let raf = 0
     const loop = (time: number) => {
