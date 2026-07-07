@@ -122,7 +122,7 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
           onPointerOut={onPointerUp}
         >
           <planeGeometry args={[s.size * s.aspect, s.size]} />
-          <meshBasicMaterial map={tex} side={THREE.DoubleSide} toneMapped={false} />
+          <meshBasicMaterial map={tex} side={THREE.DoubleSide} toneMapped={false} fog={false} />
         </mesh>
       </Billboard>
     </group>
