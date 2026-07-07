@@ -3,7 +3,7 @@ import * as THREE from 'three'
 /**
  * The spine of the whole site: one CLOSED loop in space. The camera travels
  * around it as the user scrolls; because start === end, scrolling past the last
- * world (drawings) flows seamlessly back into the first (who I am) — that's what
+ * world (drawings) flows seamlessly back into the first (about me) — that's what
  * makes the infinite scroll have no visible seam. Worlds are ranges of t.
  */
 const LOOP_POINTS = 64
@@ -54,7 +54,7 @@ export interface World {
  * The hub bookends the ride (intro at the very start).
  */
 export const WORLDS: World[] = [
-  { id: 'hub', label: 'Who I Am', index: '00', range: [0.0, 0.14], accent: '#ece3cf' },
+  { id: 'hub', label: 'About Me', index: '00', range: [0.0, 0.14], accent: '#ece3cf' },
   { id: 'web', label: 'Web Design & Dev', index: '01', range: [0.14, 0.72], accent: '#ff9d3c' },
   { id: 'sci', label: 'Scientific Graphics', index: '02', range: [0.72, 1.0], accent: '#9dff66' },
 ]

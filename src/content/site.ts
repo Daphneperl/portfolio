@@ -45,7 +45,7 @@ export interface WorldContent {
 }
 
 export const CONTENT: Record<WorldId, WorldContent> = {
-  // 00 — Who I Am  ·············································· EDIT ME
+  // 00 — About Me  ············································· EDIT ME
   hub: {
     intro: {
       heading: "I'm Daphne!",

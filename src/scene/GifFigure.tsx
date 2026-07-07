@@ -17,10 +17,10 @@ const FRAMES = [
 
 const FPS = 10 // frame swap rate — like a hand-animated gif
 const HEIGHT = 70 // world units tall
-const HUB_T = 0.06 // where in the "who I am" stretch to place her
+const HUB_T = 0.06 // where in the "about me" stretch to place her
 
 /**
- * Plays the Daph2 frame sequence as a looping gif inside the hub ("who I am")
+ * Plays the Daph2 frame sequence as a looping gif inside the hub ("about me")
  * area: a billboarded plane whose texture cycles through the frames each tick.
  */
 export function GifFigure() {

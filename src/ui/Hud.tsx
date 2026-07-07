@@ -7,7 +7,7 @@ import { BANNER_ANCHOR, JUMP_ANCHOR } from './WorldContent'
 // every button reads at a consistent height, independent of the shared
 // `label` field used elsewhere (top-right display stays single-line).
 const NAV_LINES: Record<WorldId, string[]> = {
-  hub: ['WHO I AM'],
+  hub: ['ABOUT ME'],
   web: ['WEB DESIGN', '& DEV'],
   sci: ['SCIENTIFIC', 'GRAPHICS'],
 }
@@ -43,7 +43,7 @@ export function Hud() {
   return (
     <div className="pointer-events-none fixed inset-0 z-10 select-none">
       {/* top-left: identity — name/tagline/email fade together while the
-          "Who I Am" banner (which already says this) is on screen, back in
+          "About Me" banner (which already says this) is on screen, back in
           once you scroll past it. Mobile-first: smaller text/tighter margin
           at the base, current desktop sizing restored unchanged at sm: and up. */}
       <div
@@ -74,7 +74,7 @@ export function Hud() {
       </div>
 
       {/* bottom center: world rail (sm and up) — fixed-width buttons so short
-          ("WHO I AM") and long ("SCIENTIFIC GRAPHICS") labels still space out
+          ("ABOUT ME") and long ("SCIENTIFIC GRAPHICS") labels still space out
           evenly. Hidden on mobile in favour of the stacked bottom-left rail. */}
       <nav className="pointer-events-auto absolute bottom-4 left-1/2 hidden -translate-x-1/2 justify-center gap-10 sm:flex">
         {WORLDS.map((w) => {

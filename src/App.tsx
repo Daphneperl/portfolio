@@ -11,7 +11,7 @@ import { BANNER_ANCHOR, JUMP_ANCHOR } from './ui/WorldContent'
  */
 export default function App() {
   // Open already framed on the hub banner (same landing spot the chapter nav's
-  // "Who I Am" jump uses) instead of the raw t=0 start of the curve, and
+  // "About Me" jump uses) instead of the raw t=0 start of the curve, and
   // pre-focus it so it's exactly centred from the first frame, not just close.
   useLenis(JUMP_ANCHOR.hub)
   useEffect(() => {
