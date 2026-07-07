@@ -358,16 +358,23 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
           </span>
         )}
       </div>
-      <div className="mt-4 max-w-[54rem] space-y-2">
-        {sentences.map((s, i) => (
-          <p
-            key={i}
-            className="text-base leading-relaxed text-[#e8e0cf]/85 sm:text-3xl"
-            style={{ textShadow: '0 1px 14px rgba(0,0,0,0.95)' }}
-          >
-            {s}.
-          </p>
-        ))}
+      <div className="mt-4 space-y-2">
+        {sentences.map((s, i) => {
+          // Two paragraphs specifically: the second flips to the window's
+          // right edge instead of stacking under the first on the left.
+          const alignRight = sentences.length === 2 && i === 1
+          return (
+            <p
+              key={i}
+              className={`max-w-[54rem] text-base leading-relaxed text-[#e8e0cf]/85 sm:text-3xl ${
+                alignRight ? 'ml-auto text-right' : ''
+              }`}
+              style={{ textShadow: '0 1px 14px rgba(0,0,0,0.95)' }}
+            >
+              {s}.
+            </p>
+          )
+        })}
       </div>
     </>
   )
