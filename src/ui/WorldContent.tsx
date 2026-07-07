@@ -453,6 +453,11 @@ const STARTUP_SPREAD_MS = 2600
 function FallingStars() {
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [, forceTick] = useState(0)
+  const rootRef = useRef<HTMLDivElement>(null)
+  // Tracks the hub beat's own fade (see TunnelContent's beat-content-fade
+  // class) so we can tell "just scrolled back to hub" apart from "still on
+  // hub" — the loop below only reacts to invisible-to-visible edges.
+  const wasVisibleRef = useRef(false)
 
   useEffect(() => {
     if (startedAt !== null) return
@@ -467,6 +472,27 @@ function FallingStars() {
     raf = requestAnimationFrame(check)
     return () => cancelAnimationFrame(raf)
   }, [startedAt])
+
+  // The CSS fall animation loops forever (animation-iteration-count: infinite)
+  // and keeps running the whole time the hub is scrolled away and invisible —
+  // so by the time you scroll back, every star is caught mid-loop instead of
+  // replaying its original staggered entrance, which reads as stars clumped
+  // together partway down rather than trickling in from the top. Resetting
+  // startedAt back to null on every invisible-to-visible transition makes the
+  // effect above re-arm and restart the same graceful build-up fresh, each
+  // time you return — not just the first time ever.
+  useEffect(() => {
+    let raf = 0
+    const poll = () => {
+      const ancestor = rootRef.current?.closest<HTMLElement>('.beat-content-fade')
+      const visible = ancestor ? parseFloat(getComputedStyle(ancestor).opacity) > 0.05 : false
+      if (visible && !wasVisibleRef.current) setStartedAt(null)
+      wasVisibleRef.current = visible
+      raf = requestAnimationFrame(poll)
+    }
+    raf = requestAnimationFrame(poll)
+    return () => cancelAnimationFrame(raf)
+  }, [])
 
   useEffect(() => {
     if (startedAt === null) return
@@ -500,7 +526,7 @@ function FallingStars() {
     [],
   )
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-full -z-10 h-0 overflow-visible">
+    <div ref={rootRef} className="pointer-events-none absolute inset-x-0 top-full -z-10 h-0 overflow-visible">
       {stars.map((s) => {
         const active = startedAt !== null && performance.now() - startedAt >= s.startupStagger
         return (

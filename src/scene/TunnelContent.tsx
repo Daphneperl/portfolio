@@ -118,7 +118,10 @@ function Beat3D({ beat }: { beat: Beat }) {
   return (
     <group ref={groupRef} position={pos}>
       <Html transform sprite distanceFactor={DIST_FACTOR} center zIndexRange={[10, 0]}>
-        <div ref={ref} style={{ opacity: 0, willChange: 'opacity' }}>
+        {/* beat-content-fade: a stable hook FallingStars polls (via
+            getComputedStyle) to know when the hub beat becomes visible again
+            after having faded out — see its own comment for why. */}
+        <div ref={ref} className="beat-content-fade" style={{ opacity: 0, willChange: 'opacity' }}>
           <BeatContent beat={beat} />
         </div>
       </Html>
