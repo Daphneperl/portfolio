@@ -33,8 +33,9 @@ const MOBILE_CAMERA_SHIFT = 11.7
 // camera's actual orientation, which TunnelContent's "is this beat behind me
 // yet" check also reads (via camera.getWorldDirection) to decide visibility —
 // so a stale focus target skewed that forward reference and made already-
-// passed beats fade back in. Do not reintroduce without also decoupling
-// visibility's forward-direction check from whatever look override is used.
+// passed beats fade back in. Focus-centering now lives in TunnelContent
+// instead, nudging only the focused beat's own displayed position — the
+// camera's orientation here is never touched by it.
 
 /**
  * Camera travel driven directly by scroll progress. Position eases toward the
@@ -46,6 +47,10 @@ const MOBILE_CAMERA_SHIFT = 11.7
 export function CameraRig() {
   const { camera, size } = useThree()
 
+  // Priority -1: must run BEFORE TunnelContent's per-beat useFrame callbacks
+  // (default priority 0, and it mounts after this in Scene.tsx anyway) so
+  // camera.matrixWorld is already fresh for this frame when Beat3D reads it
+  // for its focus-centering correction — otherwise it'd read last frame's.
   useFrame(() => {
     const t = scrollState.progress
 
@@ -69,8 +74,10 @@ export function CameraRig() {
       // Applied only to the render-facing position, never to _easedPos —
       // next frame starts fresh from _easedPos, so this can't compound.
       camera.position.addScaledVector(_right, MOBILE_CAMERA_SHIFT)
+    } else {
+      camera.updateMatrixWorld(true) // keep matrixWorld fresh on desktop too, for the same reason
     }
-  })
+  }, -1)
 
   return null
 }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { scrollState, scrollToProgress } from '../lib/scroll'
+import { focusState, scrollState, scrollToProgress } from '../lib/scroll'
 import { WORLDS, worldAt, type WorldId } from '../scene/curve'
-import { JUMP_ANCHOR } from './WorldContent'
+import { BANNER_ANCHOR, JUMP_ANCHOR } from './WorldContent'
 
 // Bottom-nav labels only — split the long ones onto two centered lines so
 // every button reads at a consistent height, independent of the shared
@@ -36,6 +36,7 @@ export function Hud() {
   const jump = (id: WorldId) => {
     // land a fixed distance BEFORE the banner (still approaching, fully lit) —
     // not at its exact anchor, which collapses to "just behind you" (invisible).
+    focusState.a = BANNER_ANCHOR[id] // TunnelContent nudges just the banner onto the camera axis once close
     scrollToProgress(JUMP_ANCHOR[id])
   }
 

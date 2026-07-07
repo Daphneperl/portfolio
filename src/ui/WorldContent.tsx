@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent } from 'react'
 import { WORLDS, CURVE_LENGTH, type WorldId } from '../scene/curve'
 import { CONTENT } from '../content/site'
-import { scrollState, scrollToProgress } from '../lib/scroll'
+import { focusState, scrollState, scrollToProgress } from '../lib/scroll'
 
 /**
  * The readable content, and where each piece sits ALONG the tunnel curve.
@@ -79,8 +79,17 @@ export const JUMP_ANCHOR: Record<WorldId, number> = Object.fromEntries(
 // same distance as JUMP_VIEW_DISTANCE lands too close — the window overflows
 // the viewport (title bar cropped at the top, blurb pushed off the bottom).
 // Back off further so the whole window, plus its caption below, fits inside.
+// Mobile's window renders at a much smaller CSS size than desktop's (see
+// ProjectBlock's cls below), so the same backoff would look tiny/distant —
+// park the camera closer on mobile so it reads at a comparable on-screen size.
 const PROJECT_VIEW_DISTANCE = 320
-const PROJECT_BACKOFF_T = PROJECT_VIEW_DISTANCE / CURVE_LENGTH
+const PROJECT_VIEW_DISTANCE_MOBILE = 200
+const MOBILE_BREAKPOINT = 640
+
+function projectBackoffT(): number {
+  const mobile = typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT
+  return (mobile ? PROJECT_VIEW_DISTANCE_MOBILE : PROJECT_VIEW_DISTANCE) / CURVE_LENGTH
+}
 
 /** Same backoff distance as JUMP_ANCHOR, but for ANY beat anchor (not just a
  * world's title banner) — used when clicking a beat directly in 3D space. */
@@ -105,6 +114,7 @@ function isFocused(a: number, backoffT: number): boolean {
 function handleBeatClick(a: number, hasLink: boolean, e: MouseEvent, backoffT: number = JUMP_BACKOFF_T) {
   if (hasLink && isFocused(a, backoffT)) return // already in view — let the link navigate
   e.preventDefault()
+  focusState.a = a // TunnelContent nudges just this beat onto the camera axis once close
   scrollToProgress(jumpAnchorFor(a, backoffT))
 }
 
@@ -321,19 +331,19 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
       </p>
     </>
   )
-  const cls = 'block w-[86vw] max-w-[380px] text-center sm:w-[1150px] sm:max-w-none'
+  const cls = 'block w-[94vw] max-w-[480px] text-center sm:w-[1150px] sm:max-w-none'
   return p.href ? (
     <a
       href={p.href}
       target="_blank"
       rel="noreferrer"
-      onClick={(e) => handleBeatClick(a, true, e, PROJECT_BACKOFF_T)}
+      onClick={(e) => handleBeatClick(a, true, e, projectBackoffT())}
       className={`${cls} transition-opacity hover:opacity-80`}
     >
       {inner}
     </a>
   ) : (
-    <div className={cls} onClick={(e) => handleBeatClick(a, false, e, PROJECT_BACKOFF_T)}>
+    <div className={cls} onClick={(e) => handleBeatClick(a, false, e, projectBackoffT())}>
       {inner}
     </div>
   )

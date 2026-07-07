@@ -15,6 +15,14 @@ export const scrollState = {
   vpy: 0,
 }
 
+// Set when a beat is click-focused (see WorldContent's handleBeatClick), holding
+// that beat's own curve anchor `a`. TunnelContent's Beat3D reads this to nudge
+// ONLY that beat's own displayed position (never the camera) exactly onto the
+// camera's forward axis once close enough — cosmetic, per-beat, so it can't
+// affect the camera orientation that visibility elsewhere depends on. Cleared
+// once scrolled away.
+export const focusState = { a: null as number | null }
+
 let lenis: Lenis | null = null
 
 /** Jump to a global progress (0..1) THROUGH Lenis, so it doesn't fight native scroll. */
