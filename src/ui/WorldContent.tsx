@@ -35,7 +35,7 @@ export const BEATS: Beat[] = WORLDS.flatMap((w) => {
       kind: 'project',
       project: p,
       accent: w.accent,
-      a: s + (0.45 + i * 0.4) * span,
+      a: s + (0.38 + i * 0.32) * span,
     })
   })
   return list
