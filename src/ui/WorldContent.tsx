@@ -1,6 +1,7 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, MouseEvent } from 'react'
 import { WORLDS, CURVE_LENGTH, type WorldId } from '../scene/curve'
 import { CONTENT } from '../content/site'
+import { scrollState, scrollToProgress } from '../lib/scroll'
 
 /**
  * The readable content, and where each piece sits ALONG the tunnel curve.
@@ -67,12 +68,38 @@ export const JUMP_ANCHOR: Record<WorldId, number> = Object.fromEntries(
   }),
 ) as Record<WorldId, number>
 
+/** Same backoff distance as JUMP_ANCHOR, but for ANY beat anchor (not just a
+ * world's title banner) — used when clicking a beat directly in 3D space. */
+function jumpAnchorFor(a: number): number {
+  return (((a - JUMP_BACKOFF_T) % 1) + 1) % 1
+}
+
+// How close scrollState.progress must already be to a beat's own jump anchor
+// to count as "already brought into view" (a second click, not a first).
+const FOCUS_TOLERANCE = 0.012
+
+function isFocused(a: number): boolean {
+  const target = jumpAnchorFor(a)
+  const raw = Math.abs(scrollState.progress - target)
+  return Math.min(raw, 1 - raw) < FOCUS_TOLERANCE
+}
+
+/** Click handler shared by banners and project windows: the first click just
+ * scrolls the beat into full view (front of camera); a second click — only
+ * meaningful for a project window with a real href — lets the native link
+ * navigation proceed instead of scrolling again. */
+function handleBeatClick(a: number, hasLink: boolean, e: MouseEvent) {
+  if (hasLink && isFocused(a)) return // already in view — let the link navigate
+  e.preventDefault()
+  scrollToProgress(jumpAnchorFor(a))
+}
+
 /** DOM for one beat — rendered inside a drei <Html> that lives in the 3D scene. */
 export function BeatContent({ beat }: { beat: Beat }) {
   return beat.kind === 'panel' ? (
-    <GlassPanel intro={beat.intro} accent={beat.accent} />
+    <GlassPanel intro={beat.intro} accent={beat.accent} a={beat.a} />
   ) : (
-    <ProjectBlock p={beat.project} accent={beat.accent} />
+    <ProjectBlock p={beat.project} accent={beat.accent} a={beat.a} />
   )
 }
 
@@ -155,7 +182,7 @@ function RetroWindow({
 }
 
 /** A retro browser window with the project name + description below it. */
-function ProjectBlock({ p, accent }: { p: ProjectData; accent: string }) {
+function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: number }) {
   const inner = (
     <>
       {p.gif && (
@@ -186,16 +213,24 @@ function ProjectBlock({ p, accent }: { p: ProjectData; accent: string }) {
   )
   const cls = 'block w-[86vw] max-w-[380px] text-center sm:w-[950px] sm:max-w-none'
   return p.href ? (
-    <a href={p.href} target="_blank" rel="noreferrer" className={`${cls} transition-opacity hover:opacity-80`}>
+    <a
+      href={p.href}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(e) => handleBeatClick(a, true, e)}
+      className={`${cls} transition-opacity hover:opacity-80`}
+    >
       {inner}
     </a>
   ) : (
-    <div className={cls}>{inner}</div>
+    <div className={cls} onClick={(e) => handleBeatClick(a, false, e)}>
+      {inner}
+    </div>
   )
 }
 
 /** The glass banner: heading, optional paragraphs, optional links. */
-function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
+function GlassPanel({ intro, accent, a }: { intro: IntroData; accent: string; a: number }) {
   const panel = (
     <div
       className={`liquid-glass px-10 py-9 sm:px-12 sm:py-11 ${
@@ -203,6 +238,7 @@ function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
           ? 'w-[86vw] max-w-[380px] sm:w-[560px] sm:max-w-none'
           : 'w-[86vw] max-w-[340px] sm:w-[460px] sm:max-w-none'
       }`}
+      onClick={(e) => handleBeatClick(a, false, e)}
     >
       <h1
         className="font-serif text-3xl leading-[1.05] text-[#f2ecdd] sm:text-6xl"
@@ -231,6 +267,7 @@ function GlassPanel({ intro, accent }: { intro: IntroData; accent: string }) {
               href={l.href}
               target={l.href.startsWith('http') ? '_blank' : undefined}
               rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
               className="font-mono text-xs tracking-[0.2em] uppercase transition-opacity hover:opacity-100"
               style={{ color: accent, opacity: 0.8 }}
             >
