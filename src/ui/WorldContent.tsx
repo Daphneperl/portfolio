@@ -170,6 +170,9 @@ const CAROUSEL_BACK_TEXTURE = '/textures/carousel-back2.png'
 // ring (closeness > 0.5, i.e. within 90deg of dead-centre); fully transparent
 // the rest of the way round, matching the dark/hidden back.
 const CAROUSEL_CAPTION_FADE_START = 0.5
+// Same persimmon/rust glow as the banner's .liquid-glass:hover (rgba(232,98,42,...)),
+// just always-on and toned down — applied to both front and back faces alike.
+const CAROUSEL_GLOW = '0 0 18px rgba(232, 98, 42, 0.22), 0 0 46px rgba(232, 98, 42, 0.14)'
 
 /** Shortest signed distance from angle `b` to angle `a`, in (-180, 180]. */
 function angleDiff(a: number, b: number): number {
@@ -361,15 +364,20 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
                 alt={p.title}
                 draggable={false}
                 className="rounded-none object-contain"
-                style={{ height: faceH, width: faceW, backfaceVisibility: 'hidden' }}
+                style={{ height: faceH, width: faceW, backfaceVisibility: 'hidden', boxShadow: CAROUSEL_GLOW }}
               />
-              {/* back: dark water texture, only visible on the flip side */}
+              {/* back: dark textured pattern, only visible on the flip side */}
               <img
                 src={CAROUSEL_BACK_TEXTURE}
                 alt=""
                 draggable={false}
                 className="absolute inset-0 h-full w-full rounded-none object-cover"
-                style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', filter: 'brightness(0.75) saturate(0.85)' }}
+                style={{
+                  transform: 'rotateY(180deg)',
+                  backfaceVisibility: 'hidden',
+                  filter: 'brightness(0.75) saturate(0.85)',
+                  boxShadow: CAROUSEL_GLOW,
+                }}
               />
               {/* caption: its own opacity (not backface-hidden) fades in only in
                   the front half, driven by closeness in the rAF loop above —
