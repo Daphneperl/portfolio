@@ -1,9 +1,10 @@
-import { Suspense } from 'react'
-import { useThree } from '@react-three/fiber'
+import { Suspense, useState } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { EffectComposer, Noise, Vignette, Bloom } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
+import { detourState } from '../lib/scroll'
 import { CameraRig } from './CameraRig'
 import { ImagePile } from './ImagePile'
 import { Tunnel } from './Tunnel'
@@ -16,6 +17,17 @@ const FOG_COLOR = '#0f2b18' // forest-green haze so distance blends into the voi
  * grain + vignette + bloom for the analogue-but-polished look.
  */
 export function Scene() {
+  // The film-grain Noise pass runs on the whole rendered WebGL frame — unlike
+  // every other image on the site (DOM overlays sitting outside the canvas,
+  // untouched by this), the sketchbook pile is real geometry IN that frame,
+  // so it's the one place that actually shows the grain. Since the pile is
+  // the only thing on screen while parked there anyway, fading Noise out for
+  // that view costs nothing elsewhere and reads as a clean, real photo.
+  const [inPile, setInPile] = useState(detourState.active)
+  useFrame(() => {
+    if (detourState.active !== inPile) setInPile(detourState.active)
+  })
+
   return (
     <>
       <fog attach="fog" args={[FOG_COLOR, 140, 780]} />
@@ -37,7 +49,7 @@ export function Scene() {
           radius={0.5}
           mipmapBlur
         />
-        <Noise premultiply blendFunction={BlendFunction.OVERLAY} opacity={0.8} />
+        <Noise premultiply blendFunction={BlendFunction.OVERLAY} opacity={inPile ? 0 : 0.8} />
         <Vignette eskil={false} offset={0.25} darkness={0.9} />
       </EffectComposer>
     </>
