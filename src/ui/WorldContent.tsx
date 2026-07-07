@@ -165,7 +165,7 @@ const CAROUSEL_DEPTH_BOOST_MOBILE = 110
 // Each face is double-sided: the paper image on the front, this dark water
 // texture on the back (shown automatically via backface-visibility once a
 // face has turned more than 90deg away — no JS needed for the flip itself).
-const CAROUSEL_BACK_TEXTURE = '/textures/carousel-back.jpg'
+const CAROUSEL_BACK_TEXTURE = '/textures/carousel-back2.png'
 // Caption fades in only once a face has turned into the front half of the
 // ring (closeness > 0.5, i.e. within 90deg of dead-centre); fully transparent
 // the rest of the way round, matching the dark/hidden back.
@@ -369,7 +369,7 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
                 alt=""
                 draggable={false}
                 className="absolute inset-0 h-full w-full rounded-none object-cover"
-                style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', filter: 'brightness(0.32) saturate(0.75)' }}
+                style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', filter: 'brightness(0.75) saturate(0.85)' }}
               />
               {/* caption: its own opacity (not backface-hidden) fades in only in
                   the front half, driven by closeness in the rAF loop above —
