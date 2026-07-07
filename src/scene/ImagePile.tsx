@@ -7,18 +7,17 @@ import { PILE_CENTER } from './curve'
 
 // Every scanned sketchbook page (public/items/sketchbook), each with its own
 // real width/height ratio so it doesn't stretch/crop lying in the pile.
-// sketch-23..27 are "Copy Subject" cutouts (real alpha channel, transparent
+// sketch-22/23 are "Copy Subject" cutouts (real alpha channel, transparent
 // background) rather than plain flat scans — PNG instead of JPEG, and their
 // material needs transparent:true or the cutout edge shows as a solid block
-// instead of fading into the pile behind it.
+// instead of fading into the pile behind it. Four other source files
+// (IMG_2548.jpeg + three more Subject*.png) turned out to be re-photographed/
+// "Copy Subject" duplicates of pages already covered by sketch-06, -10, -17,
+// -18 — left out rather than showing the same page twice.
 const SKETCH_FILES = [
   ...Array.from({ length: 21 }, (_, i) => `sketch-${String(i + 1).padStart(2, '0')}.jpg`),
-  'sketch-22.jpg',
+  'sketch-22.png',
   'sketch-23.png',
-  'sketch-24.png',
-  'sketch-25.png',
-  'sketch-26.png',
-  'sketch-27.png',
 ]
 const SKETCH_ASPECT: Record<string, number> = {
   'sketch-01.jpg': 0.52,
@@ -42,12 +41,8 @@ const SKETCH_ASPECT: Record<string, number> = {
   'sketch-19.jpg': 0.975,
   'sketch-20.jpg': 0.7059,
   'sketch-21.jpg': 0.9787,
-  'sketch-22.jpg': 0.7243,
-  'sketch-23.png': 0.9915,
-  'sketch-24.png': 0.9986,
-  'sketch-25.png': 0.9972,
-  'sketch-26.png': 0.7535,
-  'sketch-27.png': 0.7049,
+  'sketch-22.png': 0.9986,
+  'sketch-23.png': 0.7535,
 }
 
 const PILE_SCATTER_RADIUS = 85 // how far from centre pages can land, in world units
