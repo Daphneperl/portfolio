@@ -7,14 +7,26 @@ import { PILE_CENTER } from './curve'
 
 // Every scanned sketchbook page (public/items/sketchbook), each with its own
 // real width/height ratio so it doesn't stretch/crop lying in the pile.
-const SKETCH_FILES = Array.from({ length: 21 }, (_, i) => `sketch-${String(i + 1).padStart(2, '0')}.jpg`)
+// sketch-23..27 are "Copy Subject" cutouts (real alpha channel, transparent
+// background) rather than plain flat scans — PNG instead of JPEG, and their
+// material needs transparent:true or the cutout edge shows as a solid block
+// instead of fading into the pile behind it.
+const SKETCH_FILES = [
+  ...Array.from({ length: 21 }, (_, i) => `sketch-${String(i + 1).padStart(2, '0')}.jpg`),
+  'sketch-22.jpg',
+  'sketch-23.png',
+  'sketch-24.png',
+  'sketch-25.png',
+  'sketch-26.png',
+  'sketch-27.png',
+]
 const SKETCH_ASPECT: Record<string, number> = {
   'sketch-01.jpg': 0.52,
   'sketch-02.jpg': 1.0,
   'sketch-03.jpg': 0.9783,
   'sketch-04.jpg': 0.8,
   'sketch-05.jpg': 0.7124,
-  'sketch-06.jpg': 0.687,
+  'sketch-06.jpg': 0.6936,
   'sketch-07.jpg': 0.697,
   'sketch-08.jpg': 0.75,
   'sketch-09.jpg': 0.6937,
@@ -30,6 +42,12 @@ const SKETCH_ASPECT: Record<string, number> = {
   'sketch-19.jpg': 0.975,
   'sketch-20.jpg': 0.7059,
   'sketch-21.jpg': 0.9787,
+  'sketch-22.jpg': 0.7243,
+  'sketch-23.png': 0.9915,
+  'sketch-24.png': 0.9986,
+  'sketch-25.png': 0.9972,
+  'sketch-26.png': 0.7535,
+  'sketch-27.png': 0.7049,
 }
 
 const PILE_SCATTER_RADIUS = 85 // how far from centre pages can land, in world units
@@ -43,6 +61,7 @@ const PILE_LERP_SPEED = 0.18 // per-frame ease toward the enlarge/restore target
 interface PlacedSketch {
   file: string
   aspect: number
+  alpha: boolean
   x: number
   z: number
   y: number
@@ -59,6 +78,7 @@ function placeSketches(): PlacedSketch[] {
     return {
       file,
       aspect: SKETCH_ASPECT[file] ?? 1,
+      alpha: file.endsWith('.png'),
       x: Math.cos(angle) * r,
       z: Math.sin(angle) * r,
       y: i * 0.55 + ((i * 31) % 10) * 0.12, // gentle stacking order + jitter
@@ -173,7 +193,14 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
           onDoubleClick={onDoubleClick}
         >
           <planeGeometry args={[s.size * s.aspect, s.size]} />
-          <meshBasicMaterial map={tex} side={THREE.DoubleSide} toneMapped={false} fog={false} />
+          <meshBasicMaterial
+            map={tex}
+            side={THREE.DoubleSide}
+            toneMapped={false}
+            fog={false}
+            transparent={s.alpha}
+            alphaTest={s.alpha ? 0.1 : 0}
+          />
         </mesh>
       </Billboard>
     </group>
