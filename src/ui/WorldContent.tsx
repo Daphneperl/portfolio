@@ -440,7 +440,6 @@ function FallingStars() {
           left: Math.random() * 100,
           size: 12 + Math.random() * 16,
           duration,
-          delay: -Math.random() * duration, // negative: already mid-fall on activation, staggered
           startupStagger: Math.random() * STARTUP_SPREAD_MS,
           fallStart: -(10 + Math.random() * 6), // spawns from one crisp line along the panel's bottom margin
           fallDistance: 220 + Math.random() * 260,
@@ -469,7 +468,6 @@ function FallingStars() {
                 // invisible — the animation itself has to not be attached yet.
                 animationName: active ? 'star-fall' : 'none',
                 animationDuration: `${s.duration}s`,
-                animationDelay: `${s.delay}s`,
                 '--fall-start': `${s.fallStart}px`,
                 '--fall-distance': `${s.fallDistance}px`,
                 '--fall-spin': `${s.spin}deg`,
