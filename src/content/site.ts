@@ -122,11 +122,11 @@ export const CONTENT: Record<WorldId, WorldContent> = {
           aspect: 0.8965,
         },
         {
-          title: 'Micro-scale spatial metagenomics opens a new era in microbiome ecology',
-          href: 'https://arc.net/l/quote/kapcetbf',
+          title: 'The neural basis of imagination: An evolutionary perspective',
+          href: 'https://www.sciencedirect.com/science/article/pii/S014976342600045X',
           year: 2026,
-          image: '/items/papers/Micro-scale.png',
-          aspect: 0.8848,
+          image: '/items/papers/dmn.png',
+          aspect: 1.0141,
         },
         {
           title: 'Endemic within endemics: the microbiota of the Galapagos marine iguanas',
@@ -165,11 +165,11 @@ export const CONTENT: Record<WorldId, WorldContent> = {
           aspect: 0.8171,
         },
         {
-          title: 'The neural basis of imagination: An evolutionary perspective',
-          href: 'https://www.sciencedirect.com/science/article/pii/S014976342600045X',
+          title: 'Micro-scale spatial metagenomics opens a new era in microbiome ecology',
+          href: 'https://arc.net/l/quote/kapcetbf',
           year: 2026,
-          image: '/items/papers/dmn.png',
-          aspect: 1.0141,
+          image: '/items/papers/Micro-scale.png',
+          aspect: 0.8848,
         },
         {
           title: 'The evolutionary origins of the Global Neuronal Workspace in vertebrates',
