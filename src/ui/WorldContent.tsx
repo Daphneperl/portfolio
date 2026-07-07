@@ -148,32 +148,54 @@ const STAR_FILES = [
 ]
 const STAR_COUNT = 60
 
+// How far (in wrapped curve-progress) the camera must have moved from the
+// hub's own resting point (t=0) before stars are allowed to start — i.e. only
+// once you've actually scrolled past the banner's focused/at-rest view, not
+// just any tiny scroll input while still sitting on it.
+const HUB_EXIT_THRESHOLD = 0.012
+// Once triggered, stars don't all start at once — each activates after its
+// own random delay within this window, so the fall visibly builds up rather
+// than popping in as one block.
+const STARTUP_SPREAD_MS = 2600
+
 /** Small stars falling + rotating from the bottom edge of the hub banner,
  * behind it (negative z-index) so they read as spawning from behind the
- * glass. Each spawns a bit above the panel's bottom edge (--fall-start is
- * negative) so the actual pop-in point is hidden behind the glass, only
- * becoming visible once it's fallen past the real edge. Randomized once per
- * mount — spawn x (full banner width), size, spin, distance/speed/delay — so
- * they don't move as one synchronized block. Held paused (and invisible)
- * until the user's first scroll input, per the "only fall once they scroll"
- * ask — the hub sits at rest at the very start of the journey, so without
- * this they'd already be falling before anyone touched the page. */
+ * glass. Each spawns just above the panel's bottom edge (--fall-start is a
+ * small negative offset) so the actual pop-in point is hidden behind the
+ * glass, only becoming visible once it's fallen past the real edge.
+ * Randomized once per mount — spawn x (full banner width), size, spin,
+ * distance/speed/delay — so they don't move as one synchronized block. */
 function FallingStars() {
-  const [started, setStarted] = useState(false)
+  const [startedAt, setStartedAt] = useState<number | null>(null)
+  const [, forceTick] = useState(0)
 
   useEffect(() => {
-    if (started) return
+    if (startedAt !== null) return
     let raf = 0
     const check = () => {
-      if (Math.abs(scrollState.velocity) > 0.01) {
-        setStarted(true)
+      const distFromRest = Math.min(scrollState.progress, 1 - scrollState.progress)
+      if (distFromRest > HUB_EXIT_THRESHOLD) {
+        setStartedAt(performance.now())
         return
       }
       raf = requestAnimationFrame(check)
     }
     raf = requestAnimationFrame(check)
     return () => cancelAnimationFrame(raf)
-  }, [started])
+  }, [startedAt])
+
+  useEffect(() => {
+    if (startedAt === null) return
+    // Re-render periodically while stars are still trickling in so each one's
+    // own staggered start gets picked up; stops once the spread window has
+    // fully elapsed (nothing left to activate after that).
+    const id = setInterval(() => forceTick((n) => n + 1), 120)
+    const stop = setTimeout(() => clearInterval(id), STARTUP_SPREAD_MS + 200)
+    return () => {
+      clearInterval(id)
+      clearTimeout(stop)
+    }
+  }, [startedAt])
 
   const stars = useMemo(
     () =>
@@ -185,8 +207,9 @@ function FallingStars() {
           left: Math.random() * 100,
           size: 12 + Math.random() * 16,
           duration,
-          delay: -Math.random() * duration, // negative: already mid-fall on mount, staggered
-          fallStart: -(30 + Math.random() * 60), // spawns behind the panel, above its bottom edge
+          delay: -Math.random() * duration, // negative: already mid-fall on activation, staggered
+          startupStagger: Math.random() * STARTUP_SPREAD_MS,
+          fallStart: -(8 + Math.random() * 22), // spawns just behind the panel's bottom edge
           fallDistance: 220 + Math.random() * 260,
           spin: (Math.random() < 0.5 ? -1 : 1) * (240 + Math.random() * 360),
         }
@@ -195,30 +218,33 @@ function FallingStars() {
   )
   return (
     <div className="pointer-events-none absolute inset-x-0 top-full -z-10 h-0 overflow-visible">
-      {stars.map((s) => (
-        <img
-          key={s.key}
-          src={`/items/stars/${s.file}`}
-          alt=""
-          className="falling-star"
-          style={
-            {
-              left: `${s.left}%`,
-              width: s.size,
-              // 'none' until scrolling starts: a CSS animation overrides any
-              // inline value for a property it targets even while paused, so
-              // pausing alone can't keep these invisible pre-scroll — the
-              // animation itself has to not be attached yet.
-              animationName: started ? 'star-fall' : 'none',
-              animationDuration: `${s.duration}s`,
-              animationDelay: `${s.delay}s`,
-              '--fall-start': `${s.fallStart}px`,
-              '--fall-distance': `${s.fallDistance}px`,
-              '--fall-spin': `${s.spin}deg`,
-            } as CSSProperties
-          }
-        />
-      ))}
+      {stars.map((s) => {
+        const active = startedAt !== null && performance.now() - startedAt >= s.startupStagger
+        return (
+          <img
+            key={s.key}
+            src={`/items/stars/${s.file}`}
+            alt=""
+            className="falling-star"
+            style={
+              {
+                left: `${s.left}%`,
+                width: s.size,
+                // 'none' until this star's own staggered start arrives: a CSS
+                // animation overrides any inline value for a property it
+                // targets even while paused, so pausing alone can't keep it
+                // invisible — the animation itself has to not be attached yet.
+                animationName: active ? 'star-fall' : 'none',
+                animationDuration: `${s.duration}s`,
+                animationDelay: `${s.delay}s`,
+                '--fall-start': `${s.fallStart}px`,
+                '--fall-distance': `${s.fallDistance}px`,
+                '--fall-spin': `${s.spin}deg`,
+              } as CSSProperties
+            }
+          />
+        )
+      })}
     </div>
   )
 }
