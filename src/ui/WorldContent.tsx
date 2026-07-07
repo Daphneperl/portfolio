@@ -336,67 +336,87 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
             cursor: 'grab',
           }}
         >
-          {sorted.map((p, i) => (
-            // Positioned by its own top-left + negative margins (not inset-0)
-            // so the box can grow taller than faceH to fit the caption below,
-            // while the image itself still lands at exactly the same vertical
-            // centre inset-0 gave it — marginTop is -faceH/2, not -total/2.
-            <div
-              key={p.image}
-              ref={(el) => {
-                faceRefs.current[i] = el
-              }}
-              onClick={(e) => onFaceClick(e, i, p)}
-              className="absolute left-1/2 top-1/2"
-              style={{
-                width: faceW,
-                height: faceH,
-                marginLeft: -faceW / 2,
-                marginTop: -faceH / 2,
-                transform: `rotateY(${i * angleStep}deg) translateZ(${radius}px)`,
-                transformStyle: 'preserve-3d',
-              }}
-            >
-              {/* front: the actual paper image — hidden automatically once this
-                  face has turned past 90deg, no JS involved in the flip itself */}
-              <img
-                src={p.image}
-                alt={p.title}
-                draggable={false}
-                className="rounded-none object-contain"
-                style={{ height: faceH, width: faceW, backfaceVisibility: 'hidden', boxShadow: CAROUSEL_GLOW }}
-              />
-              {/* back: dark textured pattern, only visible on the flip side */}
-              <img
-                src={CAROUSEL_BACK_TEXTURE}
-                alt=""
-                draggable={false}
-                className="absolute inset-0 h-full w-full rounded-none object-cover"
-                style={{
-                  transform: 'rotateY(180deg)',
-                  backfaceVisibility: 'hidden',
-                  filter: 'brightness(0.75) saturate(0.85)',
-                  boxShadow: CAROUSEL_GLOW,
-                }}
-              />
-              {/* caption: its own opacity (not backface-hidden) fades in only in
-                  the front half, driven by closeness in the rAF loop above —
-                  already invisible for the whole back half, so it never needs
-                  to fight a mirrored-text flip like the images above do */}
+          {sorted.map((p, i) => {
+            // object-contain kept the <img> element itself at the full faceW x
+            // faceH placeholder box, so a box-shadow on it traced that whole
+            // rectangle — including the letterboxed empty margin for any paper
+            // whose own aspect doesn't match the frame — rather than hugging the
+            // actual picture. Sizing the element itself to the paper's own
+            // aspect (still bounded by the same faceW x faceH frame) fixes that;
+            // the back face already did this implicitly via object-cover
+            // filling its box edge-to-edge with no letterboxing.
+            const imgW = p.aspect > faceW / faceH ? faceW : faceH * p.aspect
+            const imgH = p.aspect > faceW / faceH ? faceW / p.aspect : faceH
+            return (
+              // Positioned by its own top-left + negative margins (not inset-0)
+              // so the box can grow taller than faceH to fit the caption below,
+              // while the image itself still lands at exactly the same vertical
+              // centre inset-0 gave it — marginTop is -faceH/2, not -total/2.
               <div
+                key={p.image}
                 ref={(el) => {
-                  captionRefs.current[i] = el
+                  faceRefs.current[i] = el
                 }}
-                className="absolute left-1/2 top-full mt-3 max-w-[36rem] -translate-x-1/2 text-center font-mono text-[8px] leading-snug text-[#e8e0cf] sm:text-[10px]"
-                style={{ textShadow: '0 1px 12px rgba(0,0,0,0.95)', opacity: 0 }}
+                onClick={(e) => onFaceClick(e, i, p)}
+                className="absolute left-1/2 top-1/2"
+                style={{
+                  width: faceW,
+                  height: faceH,
+                  marginLeft: -faceW / 2,
+                  marginTop: -faceH / 2,
+                  transform: `rotateY(${i * angleStep}deg) translateZ(${radius}px)`,
+                  transformStyle: 'preserve-3d',
+                }}
               >
-                {p.title}
-                <div className="mt-1 tracking-[0.2em]" style={{ color: accent }}>
-                  {p.year}
+                {/* front: the actual paper image, sized to its own aspect ratio —
+                    hidden automatically once this face has turned past 90deg,
+                    no JS involved in the flip itself */}
+                <img
+                  src={p.image}
+                  alt={p.title}
+                  draggable={false}
+                  className="absolute left-1/2 top-1/2 rounded-none"
+                  style={{
+                    width: imgW,
+                    height: imgH,
+                    marginLeft: -imgW / 2,
+                    marginTop: -imgH / 2,
+                    backfaceVisibility: 'hidden',
+                    boxShadow: CAROUSEL_GLOW,
+                  }}
+                />
+                {/* back: dark textured pattern, only visible on the flip side */}
+                <img
+                  src={CAROUSEL_BACK_TEXTURE}
+                  alt=""
+                  draggable={false}
+                  className="absolute inset-0 h-full w-full rounded-none object-cover"
+                  style={{
+                    transform: 'rotateY(180deg)',
+                    backfaceVisibility: 'hidden',
+                    filter: 'brightness(0.75) saturate(0.85)',
+                    boxShadow: CAROUSEL_GLOW,
+                  }}
+                />
+                {/* caption: its own opacity (not backface-hidden) fades in only in
+                    the front half, driven by closeness in the rAF loop above —
+                    already invisible for the whole back half, so it never needs
+                    to fight a mirrored-text flip like the images above do */}
+                <div
+                  ref={(el) => {
+                    captionRefs.current[i] = el
+                  }}
+                  className="absolute left-1/2 top-full mt-3 max-w-[36rem] -translate-x-1/2 text-center font-mono text-[8px] leading-snug text-[#e8e0cf] sm:text-[10px]"
+                  style={{ textShadow: '0 1px 12px rgba(0,0,0,0.95)', opacity: 0 }}
+                >
+                  {p.title}
+                  <div className="mt-1 tracking-[0.2em]" style={{ color: accent }}>
+                    {p.year}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>
