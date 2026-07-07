@@ -700,6 +700,12 @@ function GlassPanel({
   a: number
   withStars?: boolean
 }) {
+  // Banners with no body lines/links (just a heading — e.g. "Web Design &
+  // Dev") read oddly left-aligned in the much narrower mobile panel, where
+  // there's no paragraph text for the alignment to serve; the ones with real
+  // body copy keep left-align everywhere since centering multi-line text
+  // hurts readability.
+  const headingOnly = !intro.lines?.length && !intro.links?.length
   const panel = (
     <div
       className={`liquid-glass px-10 py-9 sm:px-12 sm:py-11 ${
@@ -710,7 +716,9 @@ function GlassPanel({
       onClick={(e) => handleBeatClick(a, false, e)}
     >
       <h1
-        className="font-serif text-3xl leading-[1.05] text-[#f2ecdd] sm:text-6xl"
+        className={`font-serif text-3xl leading-[1.05] text-[#f2ecdd] sm:text-6xl sm:text-left ${
+          headingOnly ? 'text-center' : ''
+        }`}
         style={{ textShadow: '0 2px 30px rgba(0,0,0,0.6)' }}
       >
         {intro.heading}
