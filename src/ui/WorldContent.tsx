@@ -153,9 +153,15 @@ const CAROUSEL_CLICK_THRESHOLD = 12 // px of pointer movement before a click rea
 const CAROUSEL_FRONT_TOLERANCE = 8 // degrees within which a face counts as "already facing front"
 // The face nearest "front" (whichever angle, however it got there — auto-spin,
 // drag, or a click-to-front animation) grows; the rest shrink by how far
-// they've turned away, so the ring reads as one continuously breathing whole.
-const CAROUSEL_MIN_SCALE = 0.55
-const CAROUSEL_MAX_SCALE = 1.5
+// they've turned away. This is done by pushing it closer to the viewer along
+// its OWN local Z (extra translateZ, tapering to 0 at the back) rather than
+// literally CSS-scaling its box: scaling inflates a face's own footprint and
+// eats into its neighbours' gap, since the ring's angular spacing is fixed
+// but a scaled-up box gets visually wider. Depth-based growth uses genuine
+// perspective instead, so each face's actual box — and therefore the gap
+// between it and its neighbours — never changes size, only how close it is.
+const CAROUSEL_DEPTH_BOOST = 220
+const CAROUSEL_DEPTH_BOOST_MOBILE = 110
 
 /** Shortest signed distance from angle `b` to angle `a`, in (-180, 180]. */
 function angleDiff(a: number, b: number): number {
@@ -180,6 +186,7 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
   const faceW = mobile ? CAROUSEL_FACE_W_MOBILE : CAROUSEL_FACE_W
   const faceH = mobile ? CAROUSEL_FACE_H_MOBILE : CAROUSEL_FACE_H
   const radius = mobile ? CAROUSEL_RADIUS_MOBILE : CAROUSEL_RADIUS
+  const depthBoost = mobile ? CAROUSEL_DEPTH_BOOST_MOBILE : CAROUSEL_DEPTH_BOOST
   const angleStep = 360 / sorted.length
   const backoffT = projectBackoffT()
 
@@ -222,9 +229,9 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
           bestIndex = i
         }
         const closeness = (Math.cos((diff * Math.PI) / 180) + 1) / 2 // 1 at front, 0 at the back
-        const scale = CAROUSEL_MIN_SCALE + (CAROUSEL_MAX_SCALE - CAROUSEL_MIN_SCALE) * closeness
+        const effectiveZ = radius + closeness * depthBoost
         const el = faceRefs.current[i]
-        if (el) el.style.transform = `rotateY(${faceAngle}deg) translateZ(${radius}px) scale(${scale})`
+        if (el) el.style.transform = `rotateY(${faceAngle}deg) translateZ(${effectiveZ}px)`
       })
       if (bestIndex !== frontIndexRef.current) {
         frontIndexRef.current = bestIndex
@@ -234,7 +241,7 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [sorted, angleStep, radius])
+  }, [sorted, angleStep, radius, depthBoost])
 
   // Drag-to-rotate, mouse + touch — gated to focus mode (see doc comment above).
   useEffect(() => {
