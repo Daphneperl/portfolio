@@ -203,22 +203,22 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
         />
       )}
       <div className="mt-6 flex items-baseline justify-center gap-3">
-        <span className="font-mono text-xl tracking-tight text-[#f2ecdd] sm:text-3xl">{p.name}</span>
+        <span className="font-mono text-xl tracking-tight text-[#f2ecdd] sm:text-4xl">{p.name}</span>
         {p.href && (
-          <span className="font-mono text-base" style={{ color: accent }}>
+          <span className="font-mono text-base sm:text-xl" style={{ color: accent }}>
             ↗
           </span>
         )}
       </div>
       <p
-        className="mx-auto mt-4 max-w-[40rem] text-sm leading-relaxed text-[#e8e0cf]/85 sm:text-lg"
+        className="mx-auto mt-4 max-w-[46rem] text-sm leading-relaxed text-[#e8e0cf]/85 sm:text-xl"
         style={{ textShadow: '0 1px 14px rgba(0,0,0,0.95)' }}
       >
         {p.blurb}
       </p>
     </>
   )
-  const cls = 'block w-[86vw] max-w-[380px] text-center sm:w-[950px] sm:max-w-none'
+  const cls = 'block w-[86vw] max-w-[380px] text-center sm:w-[1150px] sm:max-w-none'
   return p.href ? (
     <a
       href={p.href}
