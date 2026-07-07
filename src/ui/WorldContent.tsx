@@ -162,6 +162,14 @@ const CAROUSEL_FRONT_TOLERANCE = 8 // degrees within which a face counts as "alr
 // between it and its neighbours — never changes size, only how close it is.
 const CAROUSEL_DEPTH_BOOST = 220
 const CAROUSEL_DEPTH_BOOST_MOBILE = 110
+// Each face is double-sided: the paper image on the front, this dark water
+// texture on the back (shown automatically via backface-visibility once a
+// face has turned more than 90deg away — no JS needed for the flip itself).
+const CAROUSEL_BACK_TEXTURE = '/textures/carousel-back.jpg'
+// Caption fades in only once a face has turned into the front half of the
+// ring (closeness > 0.5, i.e. within 90deg of dead-centre); fully transparent
+// the rest of the way round, matching the dark/hidden back.
+const CAROUSEL_CAPTION_FADE_START = 0.5
 
 /** Shortest signed distance from angle `b` to angle `a`, in (-180, 180]. */
 function angleDiff(a: number, b: number): number {
@@ -192,6 +200,7 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
 
   const carouselRef = useRef<HTMLDivElement>(null)
   const faceRefs = useRef<(HTMLDivElement | null)[]>([])
+  const captionRefs = useRef<(HTMLDivElement | null)[]>([])
   const rotationRef = useRef(0)
   const draggingRef = useRef(false)
   const movedRef = useRef(0) // cumulative pointer travel this press, to tell a click from a drag
@@ -223,6 +232,11 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
         const effectiveZ = radius + closeness * depthBoost
         const el = faceRefs.current[i]
         if (el) el.style.transform = `rotateY(${faceAngle}deg) translateZ(${effectiveZ}px)`
+        const caption = captionRefs.current[i]
+        if (caption) {
+          const opacity = Math.max(0, (closeness - CAROUSEL_CAPTION_FADE_START) / (1 - CAROUSEL_CAPTION_FADE_START))
+          caption.style.opacity = String(opacity)
+        }
       })
       raf = requestAnimationFrame(tick)
     }
@@ -330,24 +344,43 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
                 faceRefs.current[i] = el
               }}
               onClick={(e) => onFaceClick(e, i, p)}
-              className="absolute left-1/2 top-1/2 flex flex-col items-center"
+              className="absolute left-1/2 top-1/2"
               style={{
                 width: faceW,
+                height: faceH,
                 marginLeft: -faceW / 2,
                 marginTop: -faceH / 2,
                 transform: `rotateY(${i * angleStep}deg) translateZ(${radius}px)`,
+                transformStyle: 'preserve-3d',
               }}
             >
+              {/* front: the actual paper image — hidden automatically once this
+                  face has turned past 90deg, no JS involved in the flip itself */}
               <img
                 src={p.image}
                 alt={p.title}
                 draggable={false}
                 className="rounded-none object-contain"
-                style={{ height: faceH, width: faceW }}
+                style={{ height: faceH, width: faceW, backfaceVisibility: 'hidden' }}
               />
+              {/* back: dark water texture, only visible on the flip side */}
+              <img
+                src={CAROUSEL_BACK_TEXTURE}
+                alt=""
+                draggable={false}
+                className="absolute inset-0 h-full w-full rounded-none object-cover"
+                style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', filter: 'brightness(0.32) saturate(0.75)' }}
+              />
+              {/* caption: its own opacity (not backface-hidden) fades in only in
+                  the front half, driven by closeness in the rAF loop above —
+                  already invisible for the whole back half, so it never needs
+                  to fight a mirrored-text flip like the images above do */}
               <div
-                className="mt-3 max-w-[36rem] text-center font-mono text-base leading-snug text-[#e8e0cf] sm:text-xl"
-                style={{ textShadow: '0 1px 12px rgba(0,0,0,0.95)' }}
+                ref={(el) => {
+                  captionRefs.current[i] = el
+                }}
+                className="absolute left-1/2 top-full mt-3 max-w-[36rem] -translate-x-1/2 text-center font-mono text-[8px] leading-snug text-[#e8e0cf] sm:text-[10px]"
+                style={{ textShadow: '0 1px 12px rgba(0,0,0,0.95)', opacity: 0 }}
               >
                 {p.title}
                 <div className="mt-1 tracking-[0.2em]" style={{ color: accent }}>
