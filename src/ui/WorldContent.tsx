@@ -302,7 +302,7 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
   return (
     <div
       className="flex flex-col items-center"
-      style={{ color: accent }}
+      style={{ color: accent, transform: `translateY(${mobile ? -20 : -40}px)` }}
       onClick={(e) => handleBeatClick(a, false, e, backoffT)}
     >
       <div
@@ -346,7 +346,7 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
                 style={{ height: faceH, width: faceW }}
               />
               <div
-                className="mt-3 max-w-[36rem] text-center font-mono text-lg leading-snug text-[#e8e0cf] sm:text-2xl"
+                className="mt-3 max-w-[36rem] text-center font-mono text-base leading-snug text-[#e8e0cf] sm:text-xl"
                 style={{ textShadow: '0 1px 12px rgba(0,0,0,0.95)' }}
               >
                 {p.title}
