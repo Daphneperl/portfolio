@@ -442,7 +442,7 @@ function FallingStars() {
           duration,
           delay: -Math.random() * duration, // negative: already mid-fall on activation, staggered
           startupStagger: Math.random() * STARTUP_SPREAD_MS,
-          fallStart: -(8 + Math.random() * 22), // spawns just behind the panel's bottom edge
+          fallStart: -(10 + Math.random() * 6), // spawns from one crisp line along the panel's bottom margin
           fallDistance: 220 + Math.random() * 260,
           spin: (Math.random() < 0.5 ? -1 : 1) * (240 + Math.random() * 360),
         }
