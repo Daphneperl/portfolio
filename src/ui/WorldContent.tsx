@@ -1,5 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { WORLDS, CURVE_LENGTH, type WorldId } from '../scene/curve'
 import { CONTENT } from '../content/site'
 import { focusState, scrollState, scrollToProgress } from '../lib/scroll'
@@ -133,175 +132,227 @@ export function BeatContent({ beat }: { beat: Beat }) {
   if (beat.kind === 'project') {
     return <ProjectBlock p={beat.project} accent={beat.accent} a={beat.a} />
   }
-  return <PapersGrid papers={beat.papers} accent={beat.accent} a={beat.a} />
+  return <PapersCarousel papers={beat.papers} accent={beat.accent} a={beat.a} />
 }
 
-/** Full-screen preview of a hovered paper — portaled straight to <body>. It
- * has to be a portal, not a sibling inside the grid's own Html sprite: that
- * Html node is positioned with a CSS transform (drei's 3D-to-screen
- * projection), and a `transform` on an ancestor redefines the containing
- * block for `position: fixed` descendants — so a fixed-centered overlay
- * INSIDE the sprite would centre on the sprite's own transformed box, not
- * the real viewport. Portaling to <body> escapes that entirely. Purely
- * visual (pointer-events-none) — clicking/focusing still happens on the
- * small thumbnail underneath, which keeps receiving the real hover events
- * regardless of what's portaled elsewhere on screen.
- *
- * Animates in with a FLIP: `originRect` is the small thumbnail's own
- * bounding box at the moment of hover. On mount, before paint, the preview
- * is transformed (translate+scale, no transition) to exactly overlay that
- * rect — so the very first frame looks identical to the thumbnail still
- * being there. One rAF later the transform is cleared to identity with a
- * transition, so the browser animates FROM the thumbnail's position/size TO
- * the natural centred/full size — it visibly grows out of where you were
- * hovering, rather than just fading in already-centred. */
-function PaperHoverPreview({ paper, accent, originRect }: { paper: PaperData; accent: string; originRect: DOMRect }) {
-  const boxRef = useRef<HTMLDivElement>(null)
+// Face frame size + orbit radius (CSS px, independent of each image's own
+// aspect ratio — a carousel needs a uniform footprint per face for the
+// rotation to read as one mechanical ring; images letterbox via object-fit
+// inside it rather than cropping — no visible frame behind them, though, so
+// letterboxing just reads as empty space). Radius keeps the ring's diameter
+// comfortably larger than the face width so faces don't intersect mid-spin.
+const CAROUSEL_FACE_W = 420
+const CAROUSEL_FACE_W_MOBILE = 200
+const CAROUSEL_FACE_H = 280
+const CAROUSEL_FACE_H_MOBILE = 160
+const CAROUSEL_RADIUS = 780
+const CAROUSEL_RADIUS_MOBILE = 380
+const CAROUSEL_SPIN_PERIOD_MS = 130_000 // ambient auto-spin: one full turn every ~2min
+const CAROUSEL_DRAG_SENSITIVITY = 0.5
+const CAROUSEL_CLICK_THRESHOLD = 12 // px of pointer movement before a click reads as a drag instead
+const CAROUSEL_FRONT_TOLERANCE = 8 // degrees within which a face counts as "already facing front"
+// The face nearest "front" (whichever angle, however it got there — auto-spin,
+// drag, or a click-to-front animation) grows; the rest shrink by how far
+// they've turned away, so the ring reads as one continuously breathing whole.
+const CAROUSEL_MIN_SCALE = 0.55
+const CAROUSEL_MAX_SCALE = 1.5
 
-  useLayoutEffect(() => {
-    const box = boxRef.current
-    if (!box) return
-    const finalRect = box.getBoundingClientRect()
-    const scale = Math.min(originRect.width / finalRect.width, originRect.height / finalRect.height)
-    const dx = originRect.left + originRect.width / 2 - (finalRect.left + finalRect.width / 2)
-    const dy = originRect.top + originRect.height / 2 - (finalRect.top + finalRect.height / 2)
-    box.style.transition = 'none'
-    box.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`
-    box.style.opacity = '0.5'
-    void box.offsetHeight // force layout so the browser commits the "from" state before animating
-    requestAnimationFrame(() => {
-      box.style.transition = 'transform 380ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms ease-out'
-      box.style.transform = 'translate(0, 0) scale(1)'
-      box.style.opacity = '1'
-    })
-  }, [originRect])
-
-  return createPortal(
-    <div className="pointer-events-none fixed inset-0 z-[500] flex flex-col items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 transition-opacity" />
-      <div ref={boxRef} className="relative flex flex-col items-center">
-        <img
-          src={paper.image}
-          alt={paper.title}
-          className="rounded-none"
-          style={{ maxHeight: '62vh', maxWidth: '72vw', width: 'auto', height: 'auto', boxShadow: '0 30px 90px rgba(0,0,0,0.85)' }}
-        />
-        <div
-          className="mt-5 max-w-[46rem] text-center font-mono text-sm leading-relaxed text-[#e8e0cf] sm:text-lg"
-          style={{ textShadow: '0 1px 14px rgba(0,0,0,0.95)' }}
-        >
-          {paper.title}
-          <div className="mt-2 tracking-[0.2em]" style={{ color: accent }}>
-            {paper.year}
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body,
-  )
+/** Shortest signed distance from angle `b` to angle `a`, in (-180, 180]. */
+function angleDiff(a: number, b: number): number {
+  return (((a - b) % 360) + 540) % 360 - 180
 }
 
-/** One paper's image in the grid — sharp corners, no crop (its real aspect
- * ratio via a computed height + auto width). Click behaves exactly like a
- * project window: first click scrolls/focuses it into view, a second click
- * (only once already focused) lets the link navigate. stopPropagation keeps
- * the container's own click (for clicking the gaps between images) from
- * double-firing. Hovering shows the full-screen preview above — but only
- * once this grid is the click-focused beat (focusState.a === a); hovering
- * while just passing by at a distance does nothing, per the ask that this
- * only kick in once the grid is close/focused for the reader. */
-function PaperCell({ paper, a, backoffT, height, onHoverChange }: { paper: PaperData; a: number; backoffT: number; height: number; onHoverChange: (hovered: boolean, rect?: DOMRect) => void }) {
-  const img = (
-    <img
-      src={paper.image}
-      alt={paper.title}
-      className="w-auto rounded-none"
-      style={{ height, boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}
-    />
-  )
-  const onClick = (e: MouseEvent) => {
-    handleBeatClick(a, Boolean(paper.href), e, backoffT)
-    e.stopPropagation()
-  }
-  const hoverHandlers = {
-    onMouseEnter: (e: MouseEvent<HTMLElement>) => {
-      if (focusState.a !== a) return
-      onHoverChange(true, e.currentTarget.getBoundingClientRect())
-    },
-    onMouseLeave: () => onHoverChange(false),
-  }
-  return paper.href ? (
-    <a
-      href={paper.href}
-      target="_blank"
-      rel="noreferrer"
-      onClick={onClick}
-      className="block shrink-0 transition-opacity hover:opacity-75"
-      {...hoverHandlers}
-    >
-      {img}
-    </a>
-  ) : (
-    <div onClick={onClick} className="block shrink-0" {...hoverHandlers}>
-      {img}
-    </div>
-  )
-}
-
-// Wider now than the original tight contact-sheet spacing — both between
-// images within a row, and between the two rows.
-const PAPERS_GAP = 28
-const PAPERS_GAP_MOBILE = 14
-const PAPERS_ROW_GAP = 40
-const PAPERS_ROW_GAP_MOBILE = 20
-const PAPERS_BASE_HEIGHT = 200 // row 1's height; row 2 is derived to match its total width
-const PAPERS_BASE_HEIGHT_MOBILE = 90
-
-function rowWidth(row: PaperData[], height: number, gap: number): number {
-  return row.reduce((sum, p) => sum + height * p.aspect, 0) + gap * (row.length - 1)
-}
-function heightForWidth(row: PaperData[], targetWidth: number, gap: number): number {
-  const aspectSum = row.reduce((sum, p) => sum + p.aspect, 0)
-  return (targetWidth - gap * (row.length - 1)) / aspectSum
-}
-
-/** All papers in the world's `papers` list, sorted oldest -> newest, laid out
- * as a 2-row grid (row 1 = the 5 oldest, row 2 = the 5 newest). Each image
- * keeps its own aspect ratio — row 1 sets a base height, row 2's height is
- * derived so its total width matches row 1's exactly, so the two rows form
- * one clean rectangle instead of two independently-centred, differently-wide
- * strips. Same viewing distance as project windows (projectBackoffT) since it
- * reads at a similar on-screen scale. */
-function PapersGrid({ papers, accent, a }: { papers: PaperData[]; accent: string; a: number }) {
+/** All papers in the world's `papers` list, sorted oldest -> newest, arranged
+ * as a draggable 3D carousel (pure CSS: rotateY + translateZ faces inside a
+ * perspective container) — modeled on the memory_almost_full gallery
+ * carousel. Ambient auto-spin always runs; drag-to-rotate and face clicks
+ * only work once this beat is the click-focused one (focusState.a === a),
+ * matching the same "only interactive once close/focused" rule used
+ * elsewhere. Click behaves like the rest of the site: the first click on a
+ * face rotates it to the front; a second click, once it's already there,
+ * opens its link. Every frame (auto-spin, drag, or the click-to-front
+ * animation alike), whichever face is nearest front grows and the rest
+ * shrink by angular distance, and its title/year caption below updates to
+ * match. */
+function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: string; a: number }) {
   const sorted = useMemo(() => [...papers].sort((x, y) => x.year - y.year), [papers])
-  const row1 = sorted.slice(0, 5)
-  const row2 = sorted.slice(5, 10)
   const mobile = typeof window !== 'undefined' && window.innerWidth < 640
-  const gap = mobile ? PAPERS_GAP_MOBILE : PAPERS_GAP
-  const rowGap = mobile ? PAPERS_ROW_GAP_MOBILE : PAPERS_ROW_GAP
-  const row1Height = mobile ? PAPERS_BASE_HEIGHT_MOBILE : PAPERS_BASE_HEIGHT
-  const targetWidth = rowWidth(row1, row1Height, gap)
-  const row2Height = heightForWidth(row2, targetWidth, gap)
+  const faceW = mobile ? CAROUSEL_FACE_W_MOBILE : CAROUSEL_FACE_W
+  const faceH = mobile ? CAROUSEL_FACE_H_MOBILE : CAROUSEL_FACE_H
+  const radius = mobile ? CAROUSEL_RADIUS_MOBILE : CAROUSEL_RADIUS
+  const angleStep = 360 / sorted.length
   const backoffT = projectBackoffT()
-  const [hovered, setHovered] = useState<{ paper: PaperData; rect: DOMRect } | null>(null)
-  const onHoverChange = (p: PaperData) => (h: boolean, rect?: DOMRect) => setHovered(h && rect ? { paper: p, rect } : null)
+
+  const carouselRef = useRef<HTMLDivElement>(null)
+  const faceRefs = useRef<(HTMLDivElement | null)[]>([])
+  const rotationRef = useRef(0)
+  const draggingRef = useRef(false)
+  const movedRef = useRef(0) // cumulative pointer travel this press, to tell a click from a drag
+  const animatingRef = useRef(false)
+  const dragStartRef = useRef({ x: 0, rotation: 0 })
+  const frontIndexRef = useRef(0)
+  const [frontIndex, setFrontIndex] = useState(0)
+
+  const applyRotation = (deg: number) => {
+    rotationRef.current = deg
+    if (carouselRef.current) carouselRef.current.style.transform = `rotateY(${deg}deg)`
+  }
+
+  // One rAF loop drives everything: auto-spin (paused while dragging or mid
+  // click-animation) plus, unconditionally every frame, each face's
+  // grow/shrink-by-proximity-to-front and which one currently counts as front.
+  useEffect(() => {
+    let raf = 0
+    let last = performance.now()
+    const tick = (t: number) => {
+      const dt = t - last
+      last = t
+      if (!draggingRef.current && !animatingRef.current) {
+        applyRotation(rotationRef.current + (dt / CAROUSEL_SPIN_PERIOD_MS) * 360)
+      }
+      const currentFrontAngle = ((-rotationRef.current % 360) + 360) % 360
+      let bestIndex = 0
+      let bestAbsDiff = Infinity
+      sorted.forEach((_, i) => {
+        const faceAngle = i * angleStep
+        const diff = angleDiff(faceAngle, currentFrontAngle)
+        const absDiff = Math.abs(diff)
+        if (absDiff < bestAbsDiff) {
+          bestAbsDiff = absDiff
+          bestIndex = i
+        }
+        const closeness = (Math.cos((diff * Math.PI) / 180) + 1) / 2 // 1 at front, 0 at the back
+        const scale = CAROUSEL_MIN_SCALE + (CAROUSEL_MAX_SCALE - CAROUSEL_MIN_SCALE) * closeness
+        const el = faceRefs.current[i]
+        if (el) el.style.transform = `rotateY(${faceAngle}deg) translateZ(${radius}px) scale(${scale})`
+      })
+      if (bestIndex !== frontIndexRef.current) {
+        frontIndexRef.current = bestIndex
+        setFrontIndex(bestIndex)
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [sorted, angleStep, radius])
+
+  // Drag-to-rotate, mouse + touch — gated to focus mode (see doc comment above).
+  useEffect(() => {
+    const el = carouselRef.current
+    if (!el) return
+    const onDown = (clientX: number) => {
+      if (focusState.a !== a || animatingRef.current) return
+      draggingRef.current = true
+      movedRef.current = 0
+      dragStartRef.current = { x: clientX, rotation: rotationRef.current }
+      el.style.cursor = 'grabbing'
+    }
+    const onMove = (clientX: number) => {
+      if (!draggingRef.current) return
+      const deltaX = clientX - dragStartRef.current.x
+      movedRef.current = Math.max(movedRef.current, Math.abs(deltaX))
+      applyRotation(dragStartRef.current.rotation + (deltaX / el.offsetWidth) * 360 * CAROUSEL_DRAG_SENSITIVITY)
+    }
+    const onUp = () => {
+      draggingRef.current = false
+      el.style.cursor = 'grab'
+    }
+    const mouseDown = (e: globalThis.MouseEvent) => {
+      onDown(e.clientX)
+      e.preventDefault()
+    }
+    const mouseMove = (e: globalThis.MouseEvent) => onMove(e.clientX)
+    const touchStart = (e: TouchEvent) => onDown(e.touches[0].clientX)
+    const touchMove = (e: TouchEvent) => onMove(e.touches[0].clientX)
+    el.addEventListener('mousedown', mouseDown)
+    window.addEventListener('mousemove', mouseMove)
+    window.addEventListener('mouseup', onUp)
+    el.addEventListener('touchstart', touchStart, { passive: true })
+    window.addEventListener('touchmove', touchMove, { passive: true })
+    window.addEventListener('touchend', onUp)
+    return () => {
+      el.removeEventListener('mousedown', mouseDown)
+      window.removeEventListener('mousemove', mouseMove)
+      window.removeEventListener('mouseup', onUp)
+      el.removeEventListener('touchstart', touchStart)
+      window.removeEventListener('touchmove', touchMove)
+      window.removeEventListener('touchend', onUp)
+    }
+  }, [a])
+
+  const onFaceClick = (e: MouseEvent, index: number, paper: PaperData) => {
+    // Not focused yet: do nothing here and let the click bubble to the
+    // container below, which brings the whole carousel into view first —
+    // same as clicking a blank part of it.
+    if (focusState.a !== a) return
+    e.stopPropagation()
+    if (movedRef.current > CAROUSEL_CLICK_THRESHOLD) return // that was a drag release, not a click
+
+    const faceAngle = index * angleStep
+    const currentFrontAngle = ((-rotationRef.current % 360) + 360) % 360
+    const diff = angleDiff(faceAngle, currentFrontAngle)
+    if (Math.abs(diff) < CAROUSEL_FRONT_TOLERANCE) {
+      if (paper.href) window.open(paper.href, '_blank', 'noreferrer')
+      return
+    }
+    animatingRef.current = true
+    const el = carouselRef.current
+    if (el) el.style.transition = 'transform 700ms cubic-bezier(0.22, 1, 0.36, 1)'
+    applyRotation(rotationRef.current - diff)
+    window.setTimeout(() => {
+      if (el) el.style.transition = 'none'
+      animatingRef.current = false
+    }, 700)
+  }
+
+  const front = sorted[frontIndex]
+
   return (
     <div
-      className="flex w-max flex-col items-center"
-      style={{ color: accent, gap: rowGap }}
+      className="flex flex-col items-center"
+      style={{ color: accent }}
       onClick={(e) => handleBeatClick(a, false, e, backoffT)}
     >
-      <div className="flex w-max items-end justify-center" style={{ gap }}>
-        {row1.map((p) => (
-          <PaperCell key={p.image} paper={p} a={a} backoffT={backoffT} height={row1Height} onHoverChange={onHoverChange(p)} />
-        ))}
+      <div
+        className="flex items-center justify-center"
+        style={{ perspective: mobile ? 1000 : 1600, width: radius * 2, height: faceH + radius * 0.6 }}
+      >
+        <div
+          ref={carouselRef}
+          style={{
+            position: 'relative',
+            width: faceW,
+            height: faceH,
+            transformStyle: 'preserve-3d',
+            cursor: 'grab',
+          }}
+        >
+          {sorted.map((p, i) => (
+            <div
+              key={p.image}
+              ref={(el) => {
+                faceRefs.current[i] = el
+              }}
+              onClick={(e) => onFaceClick(e, i, p)}
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ transform: `rotateY(${i * angleStep}deg) translateZ(${radius}px)` }}
+            >
+              <img src={p.image} alt={p.title} draggable={false} className="h-full w-full rounded-none object-contain" />
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="flex w-max items-end justify-center" style={{ gap }}>
-        {row2.map((p) => (
-          <PaperCell key={p.image} paper={p} a={a} backoffT={backoffT} height={row2Height} onHoverChange={onHoverChange(p)} />
-        ))}
-      </div>
-      {hovered && <PaperHoverPreview paper={hovered.paper} accent={accent} originRect={hovered.rect} />}
+      {front && (
+        <div
+          className="mt-6 max-w-[40rem] text-center font-mono text-sm leading-relaxed text-[#e8e0cf] sm:text-base"
+          style={{ textShadow: '0 1px 14px rgba(0,0,0,0.95)' }}
+        >
+          {front.title}
+          <div className="mt-1 tracking-[0.2em]" style={{ color: accent }}>
+            {front.year}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
