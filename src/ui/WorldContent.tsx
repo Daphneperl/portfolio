@@ -350,7 +350,7 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
           accent={accent}
         />
       )}
-      <div className="mt-6 flex items-baseline justify-center gap-3">
+      <div className="mt-6 flex items-baseline justify-start gap-3">
         <span className="font-mono text-xl tracking-tight text-[#f2ecdd] sm:text-5xl">{p.name}</span>
         {p.href && (
           <span className="font-mono text-base sm:text-2xl" style={{ color: accent }}>
@@ -358,7 +358,7 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
           </span>
         )}
       </div>
-      <div className="mx-auto mt-4 max-w-[54rem] space-y-2">
+      <div className="mt-4 max-w-[54rem] space-y-2">
         {sentences.map((s, i) => (
           <p
             key={i}
@@ -372,7 +372,7 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
     </>
   )
   const cls =
-    'block w-[94vw] max-w-[480px] -translate-y-[15px] text-center sm:w-[1320px] sm:max-w-none sm:-translate-y-[30px]'
+    'block w-[94vw] max-w-[480px] -translate-y-[15px] text-left sm:w-[1320px] sm:max-w-none sm:-translate-y-[30px]'
   return p.href ? (
     <a
       href={p.href}
