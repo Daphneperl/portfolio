@@ -423,24 +423,29 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
   )
 }
 
-// Every star PNG in public/items/stars — small gold clip-art stars, several
-// silhouettes so the fall doesn't look like one shape repeating.
+// Every drop PNG in public/items/stars — small gold clip-art charms (keys,
+// flowers, seals, a few stars), several silhouettes so the fall doesn't look
+// like one shape repeating.
 const STAR_FILES = [
-  'star_0000_Layer-2.png',
-  'star_0001_Layer-3.png',
+  'drop-01.png',
+  'drop-02.png',
+  'drop-03.png',
+  'drop-04.png',
+  'drop-05.png',
+  'drop-06.png',
+  'drop-07.png',
+  'drop-08.png',
+  'drop-09.png',
+  'drop-10.png',
+  'drop-11.png',
+  'drop-12.png',
+  'drop-13.png',
+  'drop-14.png',
   'star_0002_Layer-4.png',
-  'star_0003_Layer-5.png',
-  'star_0004_Layer-6.png',
   'star_0005_Layer-7.png',
   'star_0006_Layer-8.png',
-  'star_0007_Layer-9.png',
   'star_0008_Layer-10.png',
-  'star_0009_Layer-11.png',
   'star_0010_Layer-12.png',
-  'star_0011_Layer-13.png',
-  'star_0012_Layer-14.png',
-  'star_0013_Layer-15.png',
-  'star_0014_Layer-1.png',
 ]
 const STAR_COUNT = 60
 
