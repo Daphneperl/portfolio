@@ -57,6 +57,7 @@ export function useLenis(initialProgress = 0) {
     lenis = new Lenis({
       lerp: 0.08, // lower = smoother/heavier inertia. THIS is the feel the original lacked.
       wheelMultiplier: -1, // flip scroll direction: scroll down = travel forward through the tunnel
+      touchMultiplier: -1, // same flip for touch-drag — defaults to +1 (unflipped), which felt backward on mobile
       smoothWheel: true,
       infinite: true, // scroll never ends — it wraps around the loop
     })
