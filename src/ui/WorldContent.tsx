@@ -383,13 +383,10 @@ const STAR_FILES = [
 ]
 const STAR_COUNT = 60
 
-// How far (in wrapped curve-progress) the camera must have moved from the
-// hub's own resting point (JUMP_ANCHOR.hub — where the page opens, framed on
-// the banner) before stars are allowed to start — i.e. only once you've
-// actually scrolled past the banner's focused/at-rest view, not just any tiny
-// scroll input while still sitting on it.
-const HUB_REST_T = JUMP_ANCHOR.hub
-const HUB_EXIT_THRESHOLD = 0.012
+// Stars start on the user's very first scroll input — not once they've
+// scrolled far enough to leave the banner behind — so any non-zero scroll
+// velocity counts; a small epsilon just filters out floating-point noise.
+const SCROLL_VELOCITY_EPSILON = 0.0005
 // Once triggered, stars don't all start at once — each activates after its
 // own random delay within this window, so the fall visibly builds up rather
 // than popping in as one block.
@@ -410,9 +407,7 @@ function FallingStars() {
     if (startedAt !== null) return
     let raf = 0
     const check = () => {
-      const rawDist = Math.abs(scrollState.progress - HUB_REST_T)
-      const distFromRest = Math.min(rawDist, 1 - rawDist)
-      if (distFromRest > HUB_EXIT_THRESHOLD) {
+      if (Math.abs(scrollState.velocity) > SCROLL_VELOCITY_EPSILON) {
         setStartedAt(performance.now())
         return
       }
