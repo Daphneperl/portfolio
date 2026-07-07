@@ -197,8 +197,6 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
   const movedRef = useRef(0) // cumulative pointer travel this press, to tell a click from a drag
   const animatingRef = useRef(false)
   const dragStartRef = useRef({ x: 0, rotation: 0 })
-  const frontIndexRef = useRef(0)
-  const [frontIndex, setFrontIndex] = useState(0)
 
   const applyRotation = (deg: number) => {
     rotationRef.current = deg
@@ -207,7 +205,7 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
 
   // One rAF loop drives everything: auto-spin (paused while dragging or mid
   // click-animation) plus, unconditionally every frame, each face's
-  // grow/shrink-by-proximity-to-front and which one currently counts as front.
+  // grow/shrink-by-proximity-to-front.
   useEffect(() => {
     let raf = 0
     let last = performance.now()
@@ -218,25 +216,14 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
         applyRotation(rotationRef.current + (dt / CAROUSEL_SPIN_PERIOD_MS) * 360)
       }
       const currentFrontAngle = ((-rotationRef.current % 360) + 360) % 360
-      let bestIndex = 0
-      let bestAbsDiff = Infinity
       sorted.forEach((_, i) => {
         const faceAngle = i * angleStep
         const diff = angleDiff(faceAngle, currentFrontAngle)
-        const absDiff = Math.abs(diff)
-        if (absDiff < bestAbsDiff) {
-          bestAbsDiff = absDiff
-          bestIndex = i
-        }
         const closeness = (Math.cos((diff * Math.PI) / 180) + 1) / 2 // 1 at front, 0 at the back
         const effectiveZ = radius + closeness * depthBoost
         const el = faceRefs.current[i]
         if (el) el.style.transform = `rotateY(${faceAngle}deg) translateZ(${effectiveZ}px)`
       })
-      if (bestIndex !== frontIndexRef.current) {
-        frontIndexRef.current = bestIndex
-        setFrontIndex(bestIndex)
-      }
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -312,8 +299,6 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
     }, 700)
   }
 
-  const front = sorted[frontIndex]
-
   return (
     <div
       className="flex flex-col items-center"
@@ -335,31 +320,44 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
           }}
         >
           {sorted.map((p, i) => (
+            // Positioned by its own top-left + negative margins (not inset-0)
+            // so the box can grow taller than faceH to fit the caption below,
+            // while the image itself still lands at exactly the same vertical
+            // centre inset-0 gave it — marginTop is -faceH/2, not -total/2.
             <div
               key={p.image}
               ref={(el) => {
                 faceRefs.current[i] = el
               }}
               onClick={(e) => onFaceClick(e, i, p)}
-              className="absolute inset-0 flex items-center justify-center"
-              style={{ transform: `rotateY(${i * angleStep}deg) translateZ(${radius}px)` }}
+              className="absolute left-1/2 top-1/2 flex flex-col items-center"
+              style={{
+                width: faceW,
+                marginLeft: -faceW / 2,
+                marginTop: -faceH / 2,
+                transform: `rotateY(${i * angleStep}deg) translateZ(${radius}px)`,
+              }}
             >
-              <img src={p.image} alt={p.title} draggable={false} className="h-full w-full rounded-none object-contain" />
+              <img
+                src={p.image}
+                alt={p.title}
+                draggable={false}
+                className="rounded-none object-contain"
+                style={{ height: faceH, width: faceW }}
+              />
+              <div
+                className="mt-3 max-w-[36rem] text-center font-mono text-lg leading-snug text-[#e8e0cf] sm:text-2xl"
+                style={{ textShadow: '0 1px 12px rgba(0,0,0,0.95)' }}
+              >
+                {p.title}
+                <div className="mt-1 tracking-[0.2em]" style={{ color: accent }}>
+                  {p.year}
+                </div>
+              </div>
             </div>
           ))}
         </div>
       </div>
-      {front && (
-        <div
-          className="mt-6 max-w-[40rem] text-center font-mono text-sm leading-relaxed text-[#e8e0cf] sm:text-base"
-          style={{ textShadow: '0 1px 14px rgba(0,0,0,0.95)' }}
-        >
-          {front.title}
-          <div className="mt-1 tracking-[0.2em]" style={{ color: accent }}>
-            {front.year}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
