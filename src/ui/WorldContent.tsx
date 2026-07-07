@@ -332,6 +332,12 @@ function RetroWindow({
 
 /** A retro browser window with the project name + description below it. */
 function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: number }) {
+  // Split the blurb into one line per sentence (on ".") instead of one flowing
+  // paragraph — same treatment as the hub banner's multi-line intro.
+  const sentences = p.blurb
+    .split('.')
+    .map((s) => s.trim())
+    .filter(Boolean)
   const inner = (
     <>
       {p.gif && (
@@ -352,15 +358,21 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
           </span>
         )}
       </div>
-      <p
-        className="mx-auto mt-4 max-w-[54rem] text-sm leading-relaxed text-[#e8e0cf]/85 sm:text-2xl"
-        style={{ textShadow: '0 1px 14px rgba(0,0,0,0.95)' }}
-      >
-        {p.blurb}
-      </p>
+      <div className="mx-auto mt-4 max-w-[54rem] space-y-2">
+        {sentences.map((s, i) => (
+          <p
+            key={i}
+            className="text-base leading-relaxed text-[#e8e0cf]/85 sm:text-3xl"
+            style={{ textShadow: '0 1px 14px rgba(0,0,0,0.95)' }}
+          >
+            {s}.
+          </p>
+        ))}
+      </div>
     </>
   )
-  const cls = 'block w-[94vw] max-w-[480px] text-center sm:w-[1320px] sm:max-w-none'
+  const cls =
+    'block w-[94vw] max-w-[480px] -translate-y-[15px] text-center sm:w-[1320px] sm:max-w-none sm:-translate-y-[30px]'
   return p.href ? (
     <a
       href={p.href}
