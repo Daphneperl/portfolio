@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { WORLDS, CURVE_LENGTH, type WorldId } from '../scene/curve'
 import { CONTENT } from '../content/site'
@@ -51,7 +51,7 @@ export const BEATS: Beat[] = WORLDS.flatMap((w) => {
     })
   })
   if (papers.length > 0) {
-    list.push({ key: `${w.id}-papers`, kind: 'papers', papers, accent: w.accent, a: s + 0.52 * span })
+    list.push({ key: `${w.id}-papers`, kind: 'papers', papers, accent: w.accent, a: s + 0.6 * span })
   }
   return list
 })
@@ -145,12 +145,41 @@ export function BeatContent({ beat }: { beat: Beat }) {
  * the real viewport. Portaling to <body> escapes that entirely. Purely
  * visual (pointer-events-none) — clicking/focusing still happens on the
  * small thumbnail underneath, which keeps receiving the real hover events
- * regardless of what's portaled elsewhere on screen. */
-function PaperHoverPreview({ paper, accent }: { paper: PaperData; accent: string }) {
+ * regardless of what's portaled elsewhere on screen.
+ *
+ * Animates in with a FLIP: `originRect` is the small thumbnail's own
+ * bounding box at the moment of hover. On mount, before paint, the preview
+ * is transformed (translate+scale, no transition) to exactly overlay that
+ * rect — so the very first frame looks identical to the thumbnail still
+ * being there. One rAF later the transform is cleared to identity with a
+ * transition, so the browser animates FROM the thumbnail's position/size TO
+ * the natural centred/full size — it visibly grows out of where you were
+ * hovering, rather than just fading in already-centred. */
+function PaperHoverPreview({ paper, accent, originRect }: { paper: PaperData; accent: string; originRect: DOMRect }) {
+  const boxRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const box = boxRef.current
+    if (!box) return
+    const finalRect = box.getBoundingClientRect()
+    const scale = Math.min(originRect.width / finalRect.width, originRect.height / finalRect.height)
+    const dx = originRect.left + originRect.width / 2 - (finalRect.left + finalRect.width / 2)
+    const dy = originRect.top + originRect.height / 2 - (finalRect.top + finalRect.height / 2)
+    box.style.transition = 'none'
+    box.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`
+    box.style.opacity = '0.5'
+    void box.offsetHeight // force layout so the browser commits the "from" state before animating
+    requestAnimationFrame(() => {
+      box.style.transition = 'transform 380ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms ease-out'
+      box.style.transform = 'translate(0, 0) scale(1)'
+      box.style.opacity = '1'
+    })
+  }, [originRect])
+
   return createPortal(
     <div className="pointer-events-none fixed inset-0 z-[500] flex flex-col items-center justify-center">
       <div className="absolute inset-0 bg-black/40 transition-opacity" />
-      <div className="paper-preview relative flex flex-col items-center">
+      <div ref={boxRef} className="relative flex flex-col items-center">
         <img
           src={paper.image}
           alt={paper.title}
@@ -177,8 +206,11 @@ function PaperHoverPreview({ paper, accent }: { paper: PaperData; accent: string
  * project window: first click scrolls/focuses it into view, a second click
  * (only once already focused) lets the link navigate. stopPropagation keeps
  * the container's own click (for clicking the gaps between images) from
- * double-firing. Hovering shows the full-screen preview above. */
-function PaperCell({ paper, a, backoffT, height, onHoverChange }: { paper: PaperData; a: number; backoffT: number; height: number; onHoverChange: (hovered: boolean) => void }) {
+ * double-firing. Hovering shows the full-screen preview above — but only
+ * once this grid is the click-focused beat (focusState.a === a); hovering
+ * while just passing by at a distance does nothing, per the ask that this
+ * only kick in once the grid is close/focused for the reader. */
+function PaperCell({ paper, a, backoffT, height, onHoverChange }: { paper: PaperData; a: number; backoffT: number; height: number; onHoverChange: (hovered: boolean, rect?: DOMRect) => void }) {
   const img = (
     <img
       src={paper.image}
@@ -191,7 +223,13 @@ function PaperCell({ paper, a, backoffT, height, onHoverChange }: { paper: Paper
     handleBeatClick(a, Boolean(paper.href), e, backoffT)
     e.stopPropagation()
   }
-  const hoverHandlers = { onMouseEnter: () => onHoverChange(true), onMouseLeave: () => onHoverChange(false) }
+  const hoverHandlers = {
+    onMouseEnter: (e: MouseEvent<HTMLElement>) => {
+      if (focusState.a !== a) return
+      onHoverChange(true, e.currentTarget.getBoundingClientRect())
+    },
+    onMouseLeave: () => onHoverChange(false),
+  }
   return paper.href ? (
     <a
       href={paper.href}
@@ -245,7 +283,8 @@ function PapersGrid({ papers, accent, a }: { papers: PaperData[]; accent: string
   const targetWidth = rowWidth(row1, row1Height, gap)
   const row2Height = heightForWidth(row2, targetWidth, gap)
   const backoffT = projectBackoffT()
-  const [hovered, setHovered] = useState<PaperData | null>(null)
+  const [hovered, setHovered] = useState<{ paper: PaperData; rect: DOMRect } | null>(null)
+  const onHoverChange = (p: PaperData) => (h: boolean, rect?: DOMRect) => setHovered(h && rect ? { paper: p, rect } : null)
   return (
     <div
       className="flex w-max flex-col items-center"
@@ -254,29 +293,15 @@ function PapersGrid({ papers, accent, a }: { papers: PaperData[]; accent: string
     >
       <div className="flex w-max items-end justify-center" style={{ gap }}>
         {row1.map((p) => (
-          <PaperCell
-            key={p.image}
-            paper={p}
-            a={a}
-            backoffT={backoffT}
-            height={row1Height}
-            onHoverChange={(h) => setHovered(h ? p : null)}
-          />
+          <PaperCell key={p.image} paper={p} a={a} backoffT={backoffT} height={row1Height} onHoverChange={onHoverChange(p)} />
         ))}
       </div>
       <div className="flex w-max items-end justify-center" style={{ gap }}>
         {row2.map((p) => (
-          <PaperCell
-            key={p.image}
-            paper={p}
-            a={a}
-            backoffT={backoffT}
-            height={row2Height}
-            onHoverChange={(h) => setHovered(h ? p : null)}
-          />
+          <PaperCell key={p.image} paper={p} a={a} backoffT={backoffT} height={row2Height} onHoverChange={onHoverChange(p)} />
         ))}
       </div>
-      {hovered && <PaperHoverPreview paper={hovered} accent={accent} />}
+      {hovered && <PaperHoverPreview paper={hovered.paper} accent={accent} originRect={hovered.rect} />}
     </div>
   )
 }
