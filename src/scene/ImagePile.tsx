@@ -53,6 +53,8 @@ const PILE_ENLARGE_SCALE = 1.9 // double-click "bring to front" size multiplier
 const PILE_ENLARGE_LERP_TO_CAMERA = 0.5 // how far toward the camera it pulls, 0..1
 const PILE_LERP_SPEED = 0.18 // per-frame ease toward the enlarge/restore target
 const PILE_CLICK_THRESHOLD = 6 // px of pointer travel before a release counts as a drag, not a click
+const DOUBLE_TAP_MS = 350 // max gap between taps/clicks to count as a double
+const DOUBLE_TAP_DIST = 30 // max travel between taps to still count as "the same spot" (touch is less precise than a mouse)
 
 interface PlacedSketch {
   file: string
@@ -84,20 +86,24 @@ function placeSketches(): PlacedSketch[] {
   })
 }
 
-/** One draggable, double-clickable sketchbook page in the pile — always
- * facing the camera dead on (drei's Billboard) like a regular flat image,
- * just held slightly crooked (+/-10deg roll around the view axis). Real
- * independent world positions still give the pile genuine depth/parallax as
- * the camera flies in; only the ORIENTATION is locked to face you, not the
- * position. Dragging slides it around a plane parallel to the camera at its
- * own current depth — matches how it looks (a flat photo held up in front of
- * you), not the world-horizontal "table" a lying-flat version would use.
- * Double-click toggles "bring to front": pulls it partway toward the camera
- * and scales it up, eased in over a few frames; double-click again (or drag
- * it away) returns it to wherever it was beforehand. Only interactive once
- * the pile is actually the parked detour (mirrors the papers carousel's
- * focusState-gated drag), so it can't be grabbed by a stray click while
- * still flying toward it. */
+/** One draggable, double-clickable (or double-tappable) sketchbook page in
+ * the pile — always facing the camera dead on (drei's Billboard) like a
+ * regular flat image, just held slightly crooked (+/-10deg roll around the
+ * view axis). Real independent world positions still give the pile genuine
+ * depth/parallax as the camera flies in; only the ORIENTATION is locked to
+ * face you, not the position. Dragging slides it around a plane parallel to
+ * the camera at its own current depth — matches how it looks (a flat photo
+ * held up in front of you), not the world-horizontal "table" a lying-flat
+ * version would use. A double tap/click toggles "bring to front": pulls it
+ * partway toward the camera and scales it up, eased in over a few frames;
+ * doing it again (or dragging it away) returns it to wherever it was
+ * beforehand. Detected manually off pointerdown timing (see toggleEnlarge/
+ * onPointerDown below) rather than the browser's native 'dblclick' — that
+ * event doesn't fire reliably for a touch double-tap, so one mechanism
+ * drives both mouse and touch identically. Only interactive once the pile is
+ * actually the parked detour (mirrors the papers carousel's focusState-gated
+ * drag), so it can't be grabbed by a stray click while still flying toward
+ * it. */
 function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
   const { camera, gl } = useThree()
   const groupRef = useRef<THREE.Group>(null)
@@ -114,6 +120,12 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
   // onDoubleClick ever gets to read it.
   const movedRef = useRef(0)
   const downClientPos = useRef({ x: 0, y: 0 })
+  // Manual double-tap/double-click detection, driven off pointerdown timing
+  // rather than the browser's native 'dblclick' — that event doesn't fire
+  // reliably for a touch double-tap (same class of issue as the drag fix
+  // above), so this one mechanism covers mouse and touch identically.
+  const lastTapTime = useRef(0)
+  const lastTapPos = useRef({ x: 0, y: 0 })
   // Bound per-press so add/removeEventListener target the exact same
   // function reference; recreated fresh each pointerdown.
   const windowMoveHandler = useRef<((e: PointerEvent) => void) | null>(null)
@@ -175,9 +187,33 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
       restoreScale.current = group.scale.x
     }
   }
+  const toggleEnlarge = () => {
+    const group = groupRef.current
+    if (!group) return
+    if (!enlargedRef.current) {
+      restorePos.current.copy(group.position)
+      restoreScale.current = group.scale.x
+      targetPos.current.copy(group.position).lerp(camera.position, PILE_ENLARGE_LERP_TO_CAMERA)
+      targetScale.current = PILE_ENLARGE_SCALE
+    } else {
+      targetPos.current.copy(restorePos.current)
+      targetScale.current = restoreScale.current
+    }
+    enlargedRef.current = !enlargedRef.current
+  }
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (!detourState.active) return
     e.stopPropagation()
+    const now = performance.now()
+    const sinceLastTap = now - lastTapTime.current
+    const tapDist = Math.hypot(e.clientX - lastTapPos.current.x, e.clientY - lastTapPos.current.y)
+    if (sinceLastTap < DOUBLE_TAP_MS && tapDist < DOUBLE_TAP_DIST) {
+      toggleEnlarge()
+      lastTapTime.current = 0 // consumed — a third rapid tap starts a fresh pair, not another double
+    } else {
+      lastTapTime.current = now
+      lastTapPos.current = { x: e.clientX, y: e.clientY }
+    }
     // Move/up tracking happens via plain window-level listeners below, NOT
     // R3F's own onPointerMove/onPointerUp props — R3F's per-mesh pointer
     // "capture" (event.target.setPointerCapture, its own shim, not the DOM's,
@@ -220,27 +256,10 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
     window.addEventListener('pointerup', onUp)
     window.addEventListener('pointercancel', onUp)
   }
-  const onDoubleClick = (e: ThreeEvent<MouseEvent>) => {
-    if (!detourState.active) return
-    e.stopPropagation()
-    const group = groupRef.current
-    if (!group) return
-    if (!enlargedRef.current) {
-      restorePos.current.copy(group.position)
-      restoreScale.current = group.scale.x
-      targetPos.current.copy(group.position).lerp(camera.position, PILE_ENLARGE_LERP_TO_CAMERA)
-      targetScale.current = PILE_ENLARGE_SCALE
-    } else {
-      targetPos.current.copy(restorePos.current)
-      targetScale.current = restoreScale.current
-    }
-    enlargedRef.current = !enlargedRef.current
-  }
-
   return (
     <group ref={groupRef} position={[s.x, s.y, s.z]}>
       <Billboard>
-        <mesh rotation={[0, 0, s.roll]} onPointerDown={onPointerDown} onDoubleClick={onDoubleClick}>
+        <mesh rotation={[0, 0, s.roll]} onPointerDown={onPointerDown}>
           <planeGeometry args={[s.size * s.aspect, s.size]} />
           <meshBasicMaterial
             map={tex}
