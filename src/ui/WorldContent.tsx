@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import { WORLDS, CURVE_LENGTH, type WorldId } from '../scene/curve'
 import { CONTENT } from '../content/site'
-import { focusState, scrollState, scrollToProgress } from '../lib/scroll'
+import { enterPileDetour, focusState, scrollState, scrollToProgress } from '../lib/scroll'
 
 /**
  * The readable content, and where each piece sits ALONG the tunnel curve.
@@ -766,10 +766,19 @@ function GlassPanel({
           in place (no rise/sink motion); opacity cascades from the shared
           beat wrapper, so it only ever fades in/out with the panel. */}
       {intro.floater && (
-        <div className="pointer-events-none absolute right-[20px] top-[-140px] sm:right-[40px] sm:top-[-220px]">
+        <div
+          className="hover-glow pointer-events-auto absolute right-[20px] top-[-140px] cursor-pointer sm:right-[40px] sm:top-[-220px]"
+          style={{ color: accent }}
+          onClick={(e) => {
+            // Stop it bubbling to the panel's own onClick, which would
+            // otherwise also re-trigger this beat's scroll-to-self focus.
+            e.stopPropagation()
+            enterPileDetour()
+          }}
+        >
           <img
             src={intro.floater}
-            alt=""
+            alt="Open the sketchbook"
             className="edge-fade h-[140px] w-[140px] rounded-2xl object-cover sm:h-[220px] sm:w-[220px]"
           />
         </div>

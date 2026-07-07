@@ -23,6 +23,23 @@ export const scrollState = {
 // once scrolled away.
 export const focusState = { a: null as number | null }
 
+// Set when the user has clicked into the sketchbook image pile parked at the
+// loop's centre (an off-curve location — see scene/curve.ts's PILE_CENTER),
+// entirely independent of scrollState.progress. CameraRig checks this before
+// its normal pointAt/tangentAt drive and parks/looks at the pile instead;
+// ImagePile gates drag interactivity on it, same "only interactive once
+// you've actually arrived" rule the papers carousel uses via focusState.
+// Lenis keeps running in the background the whole time (scrollState.progress
+// keeps updating) so exiting just resumes the normal curve-follow from
+// wherever that now is — no separate "saved position" to restore.
+export const detourState = { active: false }
+export function enterPileDetour() {
+  detourState.active = true
+}
+export function exitPileDetour() {
+  detourState.active = false
+}
+
 let lenis: Lenis | null = null
 
 /** Jump to a global progress (0..1) THROUGH Lenis, so it doesn't fight native scroll. */

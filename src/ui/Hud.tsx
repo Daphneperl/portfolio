@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { focusState, scrollState, scrollToProgress } from '../lib/scroll'
+import { detourState, exitPileDetour, focusState, scrollState, scrollToProgress } from '../lib/scroll'
 import { WORLDS, worldAt, type WorldId } from '../scene/curve'
 import { BANNER_ANCHOR, JUMP_ANCHOR } from './WorldContent'
 
@@ -19,12 +19,14 @@ const NAV_LINES: Record<WorldId, string[]> = {
 export function Hud() {
   const [progress, setProgress] = useState(0)
   const [activeId, setActiveId] = useState<WorldId>('hub')
+  const [inPile, setInPile] = useState(false)
   const raf = useRef(0)
 
   useEffect(() => {
     const tick = () => {
       setProgress(scrollState.progress)
       setActiveId(worldAt(scrollState.progress).id)
+      setInPile(detourState.active)
       raf.current = requestAnimationFrame(tick)
     }
     raf.current = requestAnimationFrame(tick)
@@ -42,6 +44,22 @@ export function Hud() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-10 select-none">
+      {/* Only shown while parked at the sketchbook pile (see lib/scroll.ts's
+          detourState) — scrolling also exits (App.tsx's wheel listener), but
+          touch has no equivalent (indistinguishable from dragging a photo),
+          so this is the only exit affordance on mobile. */}
+      <div
+        className="absolute left-1/2 top-4 -translate-x-1/2 transition-opacity duration-500 sm:top-8"
+        style={{ opacity: inPile ? 1 : 0, pointerEvents: inPile ? 'auto' : 'none' }}
+      >
+        <button
+          onClick={exitPileDetour}
+          className="hover-glow pointer-events-auto flex items-center gap-2 font-mono text-xs tracking-[0.2em] text-[#e8e0cf]/80 uppercase sm:text-sm"
+        >
+          ← Back
+        </button>
+      </div>
+
       {/* top-left: identity — name/tagline/email fade together while the
           "About Me" banner (which already says this) is on screen, back in
           once you scroll past it. Mobile-first: smaller text/tighter margin

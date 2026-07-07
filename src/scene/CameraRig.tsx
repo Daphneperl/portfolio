@@ -1,7 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { scrollState } from '../lib/scroll'
-import { pointAt, tangentAt } from './curve'
+import { detourState, scrollState } from '../lib/scroll'
+import { PILE_CAMERA_POS, PILE_CENTER, pointAt, tangentAt } from './curve'
 
 const _pos = new THREE.Vector3()
 const _tan = new THREE.Vector3()
@@ -52,6 +52,22 @@ export function CameraRig() {
   // camera.matrixWorld is already fresh for this frame when Beat3D reads it
   // for its focus-centering correction — otherwise it'd read last frame's.
   useFrame(() => {
+    // Detour: parked at the sketchbook pile (see lib/scroll.ts's detourState),
+    // completely off the curve. Reuses _easedPos as the SAME persistent lerp
+    // base the normal path uses below — so entering eases smoothly from
+    // wherever the camera currently is, and exiting (detourState.active back
+    // to false) resumes the normal path's lerp from the pile position toward
+    // pointAt(scrollState.progress), i.e. a matching "fly back out" for free,
+    // no separate saved-position state needed.
+    if (detourState.active) {
+      _easedPos.lerp(PILE_CAMERA_POS, 0.06)
+      camera.position.copy(_easedPos)
+      camera.up.set(0, 1, 0)
+      camera.lookAt(PILE_CENTER)
+      camera.updateMatrixWorld(true)
+      return
+    }
+
     const t = scrollState.progress
 
     pointAt(t, _pos)

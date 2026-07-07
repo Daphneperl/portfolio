@@ -38,6 +38,16 @@ export const frenet = tunnelCurve.computeFrenetFrames(FRENET_SEGMENTS, true)
 
 export const TUNNEL_RADIUS = 90
 
+// The loop's own geometric centre: every control point is
+// LOOP_RADIUS*(cos a, LOOP_TILT*sin a, sin a), which averages to zero over a
+// full turn — so the centre is just the world origin, comfortably outside the
+// ring itself (closest curve point is ~900 units away) and unused by anything
+// else in the scene. CameraRig parks here (via the "detour" state in
+// lib/scroll.ts) when the user clicks into the sketchbook pile from the hub
+// banner; ImagePile scatters its images around this point.
+export const PILE_CENTER = new THREE.Vector3(0, 0, 0)
+export const PILE_CAMERA_POS = new THREE.Vector3(0, 190, 130)
+
 export type WorldId = 'hub' | 'web' | 'sci'
 
 export interface World {

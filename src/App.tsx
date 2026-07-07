@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { focusState, useLenis } from './lib/scroll'
+import { detourState, exitPileDetour, focusState, useLenis } from './lib/scroll'
 import { Scene } from './scene/Scene'
 import { Hud } from './ui/Hud'
 import { BANNER_ANCHOR, JUMP_ANCHOR } from './ui/WorldContent'
@@ -16,6 +16,22 @@ export default function App() {
   useLenis(JUMP_ANCHOR.hub)
   useEffect(() => {
     focusState.a = BANNER_ANCHOR.hub
+  }, [])
+
+  // Scrolling (wheel) while parked at the sketchbook pile (see lib/scroll.ts's
+  // detourState) leaves it — Lenis keeps updating scrollState.progress in the
+  // background the whole time regardless, so this just stops overriding the
+  // camera with the pile's fixed position; CameraRig's normal curve-follow
+  // path picks back up from wherever that now is. Touch has no equivalent
+  // listener here deliberately — a touchmove is indistinguishable from
+  // dragging one of the pile's photos, so touch/mobile relies on the Hud's
+  // back button instead (also available on desktop).
+  useEffect(() => {
+    const exitOnScroll = () => {
+      if (detourState.active) exitPileDetour()
+    }
+    window.addEventListener('wheel', exitOnScroll, { passive: true })
+    return () => window.removeEventListener('wheel', exitOnScroll)
   }, [])
 
   return (

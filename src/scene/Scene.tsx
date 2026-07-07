@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { EffectComposer, Noise, Vignette, Bloom } from '@react-three/postprocessing'
 import { BlendFunction } from 'postprocessing'
 import { CameraRig } from './CameraRig'
+import { ImagePile } from './ImagePile'
 import { Tunnel } from './Tunnel'
 import { TunnelContent } from './TunnelContent'
 
@@ -23,6 +24,7 @@ export function Scene() {
         <Background />
         <Tunnel />
         <TunnelContent />
+        <ImagePile />
       </Suspense>
 
       <CameraRig />
