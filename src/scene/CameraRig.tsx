@@ -25,7 +25,7 @@ const _easedPos = new THREE.Vector3()
 // shift regardless of scroll position, since it never depends on distance
 // to any particular piece of content. Desktop is completely untouched.
 const MOBILE_BREAKPOINT = 640
-const MOBILE_CAMERA_SHIFT = 12
+const MOBILE_CAMERA_SHIFT = 11.7
 
 /**
  * Camera travel driven directly by scroll progress. Position eases toward the

@@ -24,6 +24,15 @@ html {
   scroll-behavior: smooth;
   /* custom star cursor (128px, orange hover-glow baked in, hotspot on the sparkle) */
   cursor: url('/cursor.png?v=3') 26 24, auto;
+  /* Scroll is a custom 3D-tunnel experience (Lenis-driven, own progress rail
+     in the HUD) — the native scrollbar chrome is unwanted, not needed for
+     scrolling to work. Hidden, not disabled: wheel/touch scroll still works
+     exactly as before, only the visible track/thumb is gone. */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge/IE */
+}
+html::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Edge Chromium */
 }
 a,
 button,
@@ -419,11 +428,3 @@ h1, h2, h3 {
   to { background-position: 200% center; }
 }
 
-/* thin custom scrollbar */
-::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-track { background: var(--color-bg); }
-::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover { background: var(--color-accent-2); }
