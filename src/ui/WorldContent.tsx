@@ -68,18 +68,25 @@ export const JUMP_ANCHOR: Record<WorldId, number> = Object.fromEntries(
   }),
 ) as Record<WorldId, number>
 
+// Project windows are much wider/taller than a banner, so stopping at the
+// same distance as JUMP_VIEW_DISTANCE lands too close — the window overflows
+// the viewport (title bar cropped at the top, blurb pushed off the bottom).
+// Back off further so the whole window, plus its caption below, fits inside.
+const PROJECT_VIEW_DISTANCE = 320
+const PROJECT_BACKOFF_T = PROJECT_VIEW_DISTANCE / CURVE_LENGTH
+
 /** Same backoff distance as JUMP_ANCHOR, but for ANY beat anchor (not just a
  * world's title banner) — used when clicking a beat directly in 3D space. */
-function jumpAnchorFor(a: number): number {
-  return (((a - JUMP_BACKOFF_T) % 1) + 1) % 1
+function jumpAnchorFor(a: number, backoffT: number = JUMP_BACKOFF_T): number {
+  return (((a - backoffT) % 1) + 1) % 1
 }
 
 // How close scrollState.progress must already be to a beat's own jump anchor
 // to count as "already brought into view" (a second click, not a first).
 const FOCUS_TOLERANCE = 0.012
 
-function isFocused(a: number): boolean {
-  const target = jumpAnchorFor(a)
+function isFocused(a: number, backoffT: number): boolean {
+  const target = jumpAnchorFor(a, backoffT)
   const raw = Math.abs(scrollState.progress - target)
   return Math.min(raw, 1 - raw) < FOCUS_TOLERANCE
 }
@@ -88,10 +95,10 @@ function isFocused(a: number): boolean {
  * scrolls the beat into full view (front of camera); a second click — only
  * meaningful for a project window with a real href — lets the native link
  * navigation proceed instead of scrolling again. */
-function handleBeatClick(a: number, hasLink: boolean, e: MouseEvent) {
-  if (hasLink && isFocused(a)) return // already in view — let the link navigate
+function handleBeatClick(a: number, hasLink: boolean, e: MouseEvent, backoffT: number = JUMP_BACKOFF_T) {
+  if (hasLink && isFocused(a, backoffT)) return // already in view — let the link navigate
   e.preventDefault()
-  scrollToProgress(jumpAnchorFor(a))
+  scrollToProgress(jumpAnchorFor(a, backoffT))
 }
 
 /** DOM for one beat — rendered inside a drei <Html> that lives in the 3D scene. */
@@ -217,13 +224,13 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
       href={p.href}
       target="_blank"
       rel="noreferrer"
-      onClick={(e) => handleBeatClick(a, true, e)}
+      onClick={(e) => handleBeatClick(a, true, e, PROJECT_BACKOFF_T)}
       className={`${cls} transition-opacity hover:opacity-80`}
     >
       {inner}
     </a>
   ) : (
-    <div className={cls} onClick={(e) => handleBeatClick(a, false, e)}>
+    <div className={cls} onClick={(e) => handleBeatClick(a, false, e, PROJECT_BACKOFF_T)}>
       {inner}
     </div>
   )
