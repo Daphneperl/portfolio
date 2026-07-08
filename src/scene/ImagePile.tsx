@@ -7,10 +7,13 @@ import { PILE_CENTER } from './curve'
 
 // Every scanned sketchbook page (public/items/sketchbook), each with its own
 // real width/height ratio so it doesn't stretch/crop lying in the pile.
-// sketch-24, -28, -31..-35 are "Copy Subject" cutouts (real alpha channel,
+// sketch-28, -31..-35 are "Copy Subject" cutouts (real alpha channel,
 // transparent background) rather than plain flat scans — PNG instead of JPEG,
 // and their material needs transparent:true or the cutout edge shows as a
 // solid block instead of fading into the pile behind it.
+// sketch-16, -21, -24 were removed from public/items/sketchbook, hence the
+// filter — kept as a generated range + filter rather than hand-listing every
+// remaining file, so re-adding a page later is still just bumping the range.
 const SKETCH_FILES = [
   ...Array.from({ length: 23 }, (_, i) => `sketch-${String(i + 1).padStart(2, '0')}.jpg`),
   'sketch-24.png',
@@ -25,7 +28,7 @@ const SKETCH_FILES = [
   'sketch-33.png',
   'sketch-34.png',
   'sketch-35.png',
-]
+].filter((f) => !['sketch-16.jpg', 'sketch-21.jpg', 'sketch-24.png'].includes(f))
 const SKETCH_ASPECT: Record<string, number> = {
   'sketch-01.jpg': 1.3571,
   'sketch-02.jpg': 0.52,
@@ -42,15 +45,12 @@ const SKETCH_ASPECT: Record<string, number> = {
   'sketch-13.jpg': 1.0492,
   'sketch-14.jpg': 1.027,
   'sketch-15.jpg': 0.6937,
-  'sketch-16.jpg': 0.6895,
   'sketch-17.jpg': 1.093,
   'sketch-18.jpg': 0.9701,
   'sketch-19.jpg': 1.0,
   'sketch-20.jpg': 0.9989,
-  'sketch-21.jpg': 0.7254,
   'sketch-22.jpg': 1.4047,
   'sketch-23.jpg': 1.0458,
-  'sketch-24.png': 1.0,
   'sketch-25.jpg': 0.975,
   'sketch-26.jpg': 1.3289,
   'sketch-27.jpg': 0.7059,
