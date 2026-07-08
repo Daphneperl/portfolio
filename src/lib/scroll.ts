@@ -57,7 +57,23 @@ export function useLenis(initialProgress = 0) {
     lenis = new Lenis({
       lerp: 0.08, // lower = smoother/heavier inertia. THIS is the feel the original lacked.
       wheelMultiplier: -1, // flip scroll direction: scroll down = travel forward through the tunnel
-      touchMultiplier: -1, // same flip for touch-drag — defaults to +1 (unflipped), which felt backward on mobile
+      touchMultiplier: -1, // same flip for touch-drag, so swiping matches wheel's sense of direction
+      // Without this, Lenis hands touch entirely to the browser's native
+      // scroll (touchMultiplier above is then silently ignored — it's only
+      // read on this synced path) and just mirrors the resulting real
+      // scrollTop. That's a scroll of the real (900vh) document, in the
+      // browser's own native touch-scroll sign convention — the OPPOSITE
+      // sense from wheelMultiplier's flip, hence swiping felt backward no
+      // matter what touchMultiplier was set to. It also explains the
+      // "glitchy, stuck" feel: this app's infinite wrap works by Lenis
+      // programmatically resetting scrollTop near the ends, and iOS in
+      // particular fights/ignores a programmatic scrollTo while a native
+      // touch gesture is still active, so the reset would randomly not
+      // "take" mid-swipe. syncTouch routes touch through Lenis's own
+      // virtual scrollTo/animate loop instead (same path wheel already
+      // uses), so both the direction and the infinite-wrap reset behave
+      // consistently for touch too.
+      syncTouch: true,
       smoothWheel: true,
       infinite: true, // scroll never ends — it wraps around the loop
     })
