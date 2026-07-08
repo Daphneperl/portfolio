@@ -14,7 +14,7 @@ const NAV_LINES: Record<WorldId, string[]> = {
 
 /**
  * Fixed DOM layer over the 3D canvas: shows which world you're travelling
- * through, a progress rail, and lets you jump. Updates from scrollState each frame.
+ * through and lets you jump. Updates from scrollState each frame.
  */
 export function Hud() {
   const [progress, setProgress] = useState(0)
@@ -87,7 +87,7 @@ export function Hud() {
       >
         <button
           onClick={exitPileDetour}
-          className="hover-glow pointer-events-auto flex items-center gap-2 font-mono text-xs tracking-[0.2em] text-[#e8e0cf]/80 uppercase"
+          className="hover-glow pointer-events-auto flex items-center gap-2 rounded-full border border-[#e8e0cf]/25 bg-black/30 px-4 py-2.5 font-mono text-base tracking-[0.2em] text-[#e8e0cf] uppercase"
         >
           ← Back
         </button>
@@ -199,14 +199,6 @@ export function Hud() {
           )
         })}
       </nav>
-
-      {/* right edge: vertical progress */}
-      <div className="absolute right-4 top-1/2 h-24 w-[2px] -translate-y-1/2 bg-[#e8e0cf]/10 sm:right-6 sm:h-40">
-        <div
-          className="w-full bg-[#e8e0cf]/70"
-          style={{ height: `${progress * 100}%` }}
-        />
-      </div>
 
       {/* scroll hint, fades after you start */}
       <div
