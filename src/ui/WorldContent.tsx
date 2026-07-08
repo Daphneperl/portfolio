@@ -165,7 +165,7 @@ const CAROUSEL_DEPTH_BOOST_MOBILE = 110
 // Each face is double-sided: the paper image on the front, this dark water
 // texture on the back (shown automatically via backface-visibility once a
 // face has turned more than 90deg away — no JS needed for the flip itself).
-const CAROUSEL_BACK_TEXTURE = '/textures/carousel-back2.png'
+export const CAROUSEL_BACK_TEXTURE = '/textures/carousel-back2.png'
 // Caption fades in only once a face has turned into the front half of the
 // ring (closeness > 0.5, i.e. within 90deg of dead-centre); fully transparent
 // the rest of the way round, matching the dark/hidden back.
@@ -425,7 +425,7 @@ function PapersCarousel({ papers, accent, a }: { papers: PaperData[]; accent: st
 
 // Every star PNG in public/items/stars — small gold clip-art stars, several
 // silhouettes so the fall doesn't look like one shape repeating.
-const STAR_FILES = [
+export const STAR_FILES = [
   'star_0002_Layer-4.png',
   'star_0005_Layer-7.png',
   'star_0006_Layer-8.png',

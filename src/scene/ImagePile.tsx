@@ -64,10 +64,15 @@ const SKETCH_ASPECT: Record<string, number> = {
   'sketch-35.png': 0.9907,
 }
 
-// Soft drop-shadow blob, shared by every page — a single blurred rounded-rect
+// Contact-shadow blob, shared by every page — a single blurred rounded-rect
 // drawn once to a canvas, not loaded per-instance. Stretched under each page
 // (via plane geometry, not the texture itself) so its feathered edge scales
 // with that page's own aspect ratio, same trick .edge-fade's CSS mask uses.
+// Sized/blurred to hug close to the page's own silhouette (small inset, tight
+// blur) rather than a big diffuse blob — in a dense, tightly overlapping
+// pile, a wide soft shadow mostly disappears under whichever page is on top
+// of it; a tight rim shows as a real edge on THIS page wherever it's visible,
+// stacked on the dark background or on a neighbour underneath it.
 let _shadowTexture: THREE.CanvasTexture | null = null
 function getShadowTexture(): THREE.CanvasTexture {
   if (_shadowTexture) return _shadowTexture
@@ -76,8 +81,8 @@ function getShadowTexture(): THREE.CanvasTexture {
   canvas.width = size
   canvas.height = size
   const ctx = canvas.getContext('2d')!
-  const inset = 46
-  ctx.filter = 'blur(26px)'
+  const inset = 20
+  ctx.filter = 'blur(14px)'
   ctx.fillStyle = '#000'
   ctx.beginPath()
   ctx.roundRect(inset, inset, size - inset * 2, size - inset * 2, 22)
@@ -85,8 +90,8 @@ function getShadowTexture(): THREE.CanvasTexture {
   _shadowTexture = new THREE.CanvasTexture(canvas)
   return _shadowTexture
 }
-const SHADOW_SCALE = 1.2 // a bit larger than the page so the blur isn't clipped at its own edge
-const SHADOW_OFFSET = 5 // world units, down + right of the page — "light from top-left"
+const SHADOW_SCALE = 1.08 // just a touch larger than the page — a hugging rim, not a wide halo
+const SHADOW_OFFSET = 3 // world units, down + right of the page — "light from top-left"
 
 const PILE_SCATTER_RADIUS = 85 // how far from centre pages can land, in world units
 const PILE_BASE_SIZE = 68 // long-edge size of a page, world units
@@ -348,7 +353,7 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
           <meshBasicMaterial
             map={shadowTex}
             transparent
-            opacity={0.6}
+            opacity={0.92}
             depthWrite={false}
             toneMapped={false}
             fog={false}
