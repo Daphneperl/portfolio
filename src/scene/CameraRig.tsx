@@ -16,6 +16,18 @@ const _up = new THREE.Vector3()
 // tunnel's centreline). Easing happens on this separate vector; the shift is
 // applied only to the final camera.position, fresh, every frame.
 const _easedPos = new THREE.Vector3()
+// _easedPos starts at the vector's default (0,0,0) — world origin — which is
+// nowhere near the actual curve (radius ~900 units). Lerping from there on
+// the very first frame meant the camera visibly flew in from the tunnel's
+// centre toward wherever the page opens focused (e.g. the hub banner) over
+// its first ~20-30 frames — normally hidden behind the loading screen, but
+// with no fixed minimum hold time it could still be mid-flight when the
+// screen faded, showing as "loads, then scrolls to a weird spot" even though
+// scrollState.progress itself was correct from frame 1. Snapping straight to
+// the true starting position on that first frame (see `_initialized` below)
+// removes the flight entirely — normal lerping still applies to every real
+// scroll change after that.
+let _initialized = false
 
 // Mobile only: nudge the camera itself sideways (along its OWN right vector,
 // after orientation is set — a pure parallax shift, not a re-aim). Content
@@ -82,8 +94,13 @@ export function CameraRig() {
     pointAt(t, _pos)
     tangentAt(t, _tan) // forward direction along the ring (always +t), stays continuous
 
-    // Ease the TRUE (unshifted) position toward the target on the curve.
-    _easedPos.lerp(_pos, 0.12)
+    if (!_initialized) {
+      _easedPos.copy(_pos) // start exactly where the page opens — no flight-in from the origin
+      _initialized = true
+    } else {
+      // Ease the TRUE (unshifted) position toward the target on the curve.
+      _easedPos.lerp(_pos, 0.12)
+    }
     camera.position.copy(_easedPos)
 
     // Face the forward tangent, measured from where the camera ACTUALLY is — not

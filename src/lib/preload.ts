@@ -1,27 +1,19 @@
 import { CONTENT } from '../content/site'
-import { CAROUSEL_BACK_TEXTURE, STAR_FILES } from '../ui/WorldContent'
 
 /**
- * Every image the site loads OUTSIDE THREE's texture pipeline — plain
- * `<img src=...>` tags in WorldContent.tsx (project screenshots, the papers
- * grid, the hub's floating photo, the in-silico microbe floaters, the
- * falling stars). drei's useProgress only sees useTexture() calls, so these
- * are invisible to it — which is exactly why the loading screen used to
- * disappear while these were still arriving mid-scroll. LoadingScreen.tsx
- * preloads this list itself and waits for all of it, on top of useProgress.
+ * Images needed for the initial hub ("About Me") view specifically — NOT the
+ * whole site's assets. useProgress (drei) only tracks useTexture() calls
+ * (Background.png, and — now that ImagePile is lazy-mounted, see Scene.tsx —
+ * nothing else eagerly), so it's blind to plain `<img src=...>` tags like the
+ * hub's floating photo. Waiting for literally every image across every world
+ * (project screenshots, the papers grid, the sketch pile, microbe floaters,
+ * falling stars) would mean a first-time visitor waits on ~70MB of images
+ * belonging to sections they haven't scrolled to yet — everything past the
+ * hub still loads the normal, lazy way as you scroll to it.
  */
 export function domImageUrls(): string[] {
-  const urls = new Set<string>([CAROUSEL_BACK_TEXTURE, ...STAR_FILES.map((f) => `/items/stars/${f}`)])
-  for (const world of Object.values(CONTENT)) {
-    const intro = world.intro
-    if (!intro) continue
-    if (intro.floater) urls.add(intro.floater)
-    for (const p of intro.projects ?? []) {
-      if (p.gif) urls.add(p.gif)
-      for (const f of p.floaters ?? []) urls.add(f)
-    }
-    for (const paper of intro.papers ?? []) urls.add(paper.image)
-  }
+  const urls = new Set<string>()
+  if (CONTENT.hub.intro?.floater) urls.add(CONTENT.hub.intro.floater)
   return [...urls]
 }
 

@@ -25,8 +25,17 @@ export function Scene() {
   // while parked there anyway, fading all three out for that view costs
   // nothing elsewhere and reads as a clean, accurately-colored photo.
   const [inPile, setInPile] = useState(detourState.active)
+  // ImagePile's 35 sketch-page textures used to load eagerly on first mount
+  // even though the pile sits off-frustum at the hub's starting camera angle
+  // and is only ever seen after clicking the hub floater into the detour —
+  // that made the loading screen wait on ~13MB nobody's looking at yet.
+  // Mounting it only once the detour has actually been entered (and keeping
+  // it mounted after, so re-entering doesn't re-fetch) defers that load to
+  // when it's actually needed instead.
+  const [everOpenedPile, setEverOpenedPile] = useState(detourState.active)
   useFrame(() => {
     if (detourState.active !== inPile) setInPile(detourState.active)
+    if (detourState.active && !everOpenedPile) setEverOpenedPile(true)
   })
 
   return (
@@ -37,7 +46,7 @@ export function Scene() {
         <Background />
         <Tunnel />
         <TunnelContent />
-        <ImagePile />
+        {everOpenedPile && <ImagePile />}
       </Suspense>
 
       <CameraRig />
