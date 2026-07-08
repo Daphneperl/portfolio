@@ -151,12 +151,12 @@ h1, h2, h3 {
 /* ---- Edge-fade: feather all four edges of an image to transparent ---- */
 .edge-fade {
   -webkit-mask-image:
-    linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 16%, #000 84%, transparent 100%);
+    linear-gradient(to right, transparent 0%, #000 5%, #000 95%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 5%, #000 95%, transparent 100%);
   -webkit-mask-composite: source-in;
   mask-image:
-    linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, #000 16%, #000 84%, transparent 100%);
+    linear-gradient(to right, transparent 0%, #000 5%, #000 95%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, #000 5%, #000 95%, transparent 100%);
   mask-composite: intersect;
 }
 
@@ -215,26 +215,6 @@ h1, h2, h3 {
   background: linear-gradient(180deg, rgba(157, 255, 102, 0.1), rgba(157, 255, 102, 0.02));
   border-bottom: 1px solid rgba(157, 255, 102, 0.18);
   color: var(--rw-accent);
-}
-.retro-ico,
-.retro-fav {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 30px;
-  height: 30px;
-  border: 1px solid currentColor;
-  border-radius: 5px;
-  color: var(--rw-accent);
-  font-style: normal;
-  font-weight: 700;
-  font-size: 21px;
-}
-.retro-fav {
-  width: 28px;
-  height: 28px;
-  font-size: 20px;
 }
 .retro-title-text {
   flex: 1;
@@ -361,17 +341,6 @@ h1, h2, h3 {
     gap: 6px;
     padding: 0 8px;
   }
-  .retro-ico,
-  .retro-fav {
-    width: 14px;
-    height: 14px;
-    font-size: 9px;
-  }
-  .retro-fav {
-    width: 12px;
-    height: 12px;
-    font-size: 8px;
-  }
   .retro-winbtn {
     width: 18px;
     height: 15px;
@@ -387,6 +356,76 @@ h1, h2, h3 {
   }
   .retro-go {
     padding: 3px 8px;
+  }
+}
+
+/* ---- Loading screen ----
+   Shown until every scene texture has actually loaded (see LoadingScreen.tsx,
+   driven by drei's useProgress — the real THREE loading-manager queue, not a
+   fake timer). Lives outside the <Canvas>, so the background here is a plain
+   CSS copy of the same dimmed-image treatment Scene.tsx's <Background> gives
+   the in-scene one (scene.backgroundIntensity). Deliberately minimal below
+   that — just the gif and a thin bar, no mock-browser chrome. */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg);
+  background-image:
+    linear-gradient(rgba(13, 23, 18, 0.82), rgba(13, 23, 18, 0.82)),
+    url('/textures/Background.png');
+  background-size: cover;
+  background-position: center;
+  transition: opacity 0.5s ease;
+  opacity: 1;
+}
+.loading-screen-out {
+  opacity: 0;
+  pointer-events: none;
+}
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.loading-gif {
+  /* Height-bound, not width-bound — the source photo is a tall cutout, so
+     constraining by height keeps it comfortably clear of the bar below on
+     short viewports too. */
+  height: 20vh;
+  width: auto;
+  max-width: 50vw;
+  flex: none;
+  filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.6));
+}
+.loading-bar-track {
+  width: min(70vw, 280px);
+  height: 6px;
+  flex: none;
+  background: rgba(157, 255, 102, 0.22);
+  border: 1px solid rgba(157, 255, 102, 0.35);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.loading-bar-fill {
+  height: 100%;
+  min-width: 6px;
+  background: #9dff66;
+  box-shadow: 0 0 10px rgba(157, 255, 102, 0.8);
+  transition: width 0.2s ease-out;
+}
+@media (max-width: 639px) {
+  .loading-gif {
+    height: 14vh;
   }
 }
 
@@ -416,6 +455,50 @@ h1, h2, h3 {
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
   animation-timing-function: linear;
   animation-iteration-count: infinite;
+}
+
+/* ---- Microbe gifs drifting around the in-silico-synthesizer window ----
+   A real wandering loop around each one's base spot — not just a small bob
+   in place — sized per instance via --float-amp-x/-y (see randomFloaterLayout
+   in WorldContent.tsx), which also randomizes duration/delay so six copies
+   never trace the same path in lockstep. Six keyframe stops (not a simple
+   there-and-back) so the path reads as an organic drift, not a pendulum. */
+/* Every stop uses a NON-NEGATIVE multiple of --float-amp-x/-y, so whatever
+   sign WorldContent.tsx's randomFloaterLayout gave them (pointing away from
+   the window for whichever lane this instance is in) is the only direction
+   it ever moves in — it drifts further out and eases back, but never crosses
+   back over the sign line toward the window ("repelled by it"). */
+@keyframes microbe-float {
+  0% {
+    transform: translate(0, 0) rotate(var(--float-rot, 0deg));
+  }
+  30% {
+    transform: translate(calc(var(--float-amp-x, 120px) * 0.5), calc(var(--float-amp-y, 100px) * 0.6))
+      rotate(calc(var(--float-rot, 0deg) + 6deg));
+  }
+  55% {
+    transform: translate(var(--float-amp-x, 120px), calc(var(--float-amp-y, 100px) * 0.35))
+      rotate(calc(var(--float-rot, 0deg) - 5deg));
+  }
+  80% {
+    transform: translate(calc(var(--float-amp-x, 120px) * 0.6), var(--float-amp-y, 100px))
+      rotate(calc(var(--float-rot, 0deg) + 4deg));
+  }
+  100% {
+    transform: translate(0, 0) rotate(var(--float-rot, 0deg));
+  }
+}
+.microbe-floater {
+  position: absolute;
+  z-index: -1; /* always behind the project window, regardless of DOM order */
+  height: auto;
+  opacity: 0.9;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.55));
+  animation-name: microbe-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-duration: var(--float-duration, 8s);
+  animation-delay: var(--float-delay, 0s);
 }
 
 /* ---- Hover: warm glow + gentle float-up (glass panels & chapter buttons) ---- */

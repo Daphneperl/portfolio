@@ -576,7 +576,6 @@ function RetroWindow({
   return (
     <div className="retro-window" style={{ '--rw-accent': accent } as CSSProperties}>
       <div className="retro-titlebar">
-        <span className="retro-ico">e</span>
         <span className="retro-title-text">{title} - Microsoft Internet Explorer</span>
         <span className="retro-winbtns">
           <span className="retro-winbtn">_</span>
@@ -619,7 +618,6 @@ function RetroWindow({
       <div className="retro-row retro-address">
         <span className="retro-address-label">Address</span>
         <span className="retro-field">
-          <span className="retro-fav">e</span>
           <span className="retro-url">{url}</span>
         </span>
         <span className="retro-go">→ Go</span>
@@ -635,6 +633,97 @@ function RetroWindow({
   )
 }
 
+// The block is a fixed 1320px wide from the sm: breakpoint up (see cls below)
+// — it doesn't scale further on wider screens — and floaters only ever show
+// at sm: and up too, so this is a real constant for their whole visible
+// range, not a guess. Lets the four lanes below be plain px rectangles that
+// never need to know the actual viewport width.
+const PROJECT_BLOCK_W = 1320
+
+// Four lanes OUTSIDE the window's own box — left/right run its full height,
+// top/bottom run its full width — each keeping a margin gap so nothing
+// starts touching the edge. windowH varies per project (aspect ratio), so
+// callers pass it in rather than hardcoding one project's shape here.
+function floaterLanes(windowH: number) {
+  return [
+    { x: [-330, -70], y: [0, windowH], awayX: -1, awayY: 0 }, // left
+    { x: [PROJECT_BLOCK_W + 70, PROJECT_BLOCK_W + 330], y: [0, windowH], awayX: 1, awayY: 0 }, // right
+    { x: [0, PROJECT_BLOCK_W], y: [-260, -60], awayX: 0, awayY: -1 }, // top
+    { x: [0, PROJECT_BLOCK_W], y: [windowH + 60, windowH + 260], awayX: 0, awayY: 1 }, // bottom
+  ]
+}
+
+/** Randomized per mount (fresh scatter every visit, same spirit as the sketch
+ * pile's shuffle), one of the four lanes above per floater (cycled so six
+ * spread evenly rather than clumping by chance) — "repelled" by biasing the
+ * wander animation to always drift FURTHER into the lane's own direction
+ * (awayX/awayY), never back across into the window's own footprint. */
+function randomFloaterLayout(count: number, windowH: number) {
+  const lanes = floaterLanes(windowH)
+  return Array.from({ length: count }, (_, i) => {
+    const lane = lanes[i % lanes.length]
+    const x = lane.x[0] + Math.random() * (lane.x[1] - lane.x[0])
+    const y = lane.y[0] + Math.random() * (lane.y[1] - lane.y[0])
+    // Perpendicular-to-the-edge component always points outward (lane.awayX/Y
+    // is 0 or ±1, so multiplying by a positive magnitude keeps its sign); the
+    // parallel component (running along the edge) can go either way — that's
+    // sideways drift, not toward-or-away from the window.
+    const along = (Math.random() - 0.5) * 2 * (90 + Math.random() * 120)
+    const ampX = lane.awayX !== 0 ? lane.awayX * (90 + Math.random() * 160) : along
+    const ampY = lane.awayY !== 0 ? lane.awayY * (90 + Math.random() * 160) : along
+    return {
+      top: y,
+      left: x,
+      size: 160 + Math.random() * 130, // was a tight 92-118; bigger + wider range
+      rot: (Math.random() - 0.5) * 36,
+      ampX,
+      ampY,
+      duration: 16 + Math.random() * 10,
+      delay: Math.random() * 6,
+    }
+  })
+}
+
+/** Small gifs that gently bob/drift around a project window — desktop only
+ * (mobile's window already fills nearly the whole screen width, no margin
+ * for anything to float past its edges without just overlapping it). Sits
+ * BEHIND the window (see .microbe-floater's z-index and this rendering
+ * before RetroWindow in ProjectBlock) so it reads as background motion, not
+ * something occluding the actual content. Kept to the four lanes beside/
+ * above/below the window (see floaterLanes) rather than anywhere in the
+ * block, so they never drift over the screenshot itself. */
+function FloatingMicrobes({ floaters, aspect }: { floaters: string[]; aspect: string }) {
+  const windowH = useMemo(() => {
+    const [w, h] = aspect.split('/').map((n) => parseFloat(n.trim()))
+    return PROJECT_BLOCK_W / (w / h)
+  }, [aspect])
+  const layout = useMemo(() => randomFloaterLayout(floaters.length, windowH), [floaters, windowH])
+  return (
+    <div className="pointer-events-none absolute inset-0 hidden sm:block" aria-hidden>
+      {floaters.map((src, i) => (
+        <img
+          key={src}
+          src={src}
+          alt=""
+          className="microbe-floater"
+          style={
+            {
+              top: layout[i].top,
+              left: layout[i].left,
+              width: layout[i].size,
+              '--float-rot': `${layout[i].rot}deg`,
+              '--float-amp-x': `${layout[i].ampX}px`,
+              '--float-amp-y': `${layout[i].ampY}px`,
+              '--float-duration': `${layout[i].duration}s`,
+              '--float-delay': `${layout[i].delay}s`,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </div>
+  )
+}
+
 /** A retro browser window with the project name + description below it. */
 function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: number }) {
   // Split the blurb into one line per sentence (on ".") instead of one flowing
@@ -645,6 +734,11 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
     .filter(Boolean)
   const inner = (
     <>
+      {/* Rendered before (so it paints behind) and sized to the whole outer
+          block, not just the window — "farther from the window, around the
+          page" needs more room to roam than a wrapper hugging the screenshot
+          itself would give it. */}
+      {p.floaters && <FloatingMicrobes floaters={p.floaters} aspect={p.aspect ?? '4 / 3'} />}
       {p.gif && (
         <RetroWindow
           title={p.title ?? p.name}
@@ -683,7 +777,7 @@ function ProjectBlock({ p, accent, a }: { p: ProjectData; accent: string; a: num
       </div>
     </>
   )
-  const cls = 'block w-[94vw] max-w-[480px] text-left sm:w-[1320px] sm:max-w-none'
+  const cls = 'relative block w-[94vw] max-w-[480px] text-left sm:w-[1320px] sm:max-w-none'
   // Right-aligning every paragraph after the first (above) makes a 3-sentence
   // blurb reach far enough down to collide with the bottom chapter nav, since
   // that text now sits under it instead of off to the left. junk_is has more
@@ -795,7 +889,7 @@ function GlassPanel({
           beat wrapper, so it only ever fades in/out with the panel. */}
       {intro.floater && (
         <div
-          className="hover-glow pointer-events-auto absolute right-[20px] top-[-140px] cursor-pointer sm:right-[40px] sm:top-[-220px]"
+          className="hover-glow pointer-events-auto absolute right-[20px] top-[-135px] cursor-pointer sm:right-[40px] sm:top-[-215px]"
           style={{ color: '#e8622a' }}
           onClick={(e) => {
             // Stop it bubbling to the panel's own onClick, which would
@@ -807,7 +901,7 @@ function GlassPanel({
           <img
             src={intro.floater}
             alt="Open the sketchbook"
-            className="edge-fade h-[140px] w-[140px] rounded-2xl object-cover sm:h-[220px] sm:w-[220px]"
+            className="edge-fade h-[140px] w-auto rounded-2xl object-contain sm:h-[220px]"
           />
         </div>
       )}

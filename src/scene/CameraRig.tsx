@@ -7,6 +7,7 @@ const _pos = new THREE.Vector3()
 const _tan = new THREE.Vector3()
 const _look = new THREE.Vector3()
 const _right = new THREE.Vector3()
+const _up = new THREE.Vector3()
 // Tracks the TRUE unshifted eased position across frames. camera.position
 // itself must NOT be used as the lerp base once we start adding the mobile
 // shift to it — otherwise the shift feeds back into next frame's lerp start
@@ -29,6 +30,11 @@ const _easedPos = new THREE.Vector3()
 // only for the click-focused beat (see its own comment for why).
 export const MOBILE_BREAKPOINT = 640
 const MOBILE_CAMERA_SHIFT = 11.7
+// Content was reading a bit low in the mobile viewport (both general scroll and
+// focus mode, which shares this same per-frame camera path) — dropping the eye
+// point itself (along its own up vector) shifts everything higher on screen,
+// same parallax trick as the horizontal shift above.
+const MOBILE_CAMERA_VERTICAL_SHIFT = 6
 
 // NOTE: a "focus mode" experiment once lived here — blending the look target
 // toward a click-focused beat's exact position as the camera approached, to
@@ -90,9 +96,11 @@ export function CameraRig() {
     if (size.width < MOBILE_BREAKPOINT) {
       camera.updateMatrixWorld(true) // matrixWorld must reflect the lookAt just above
       _right.setFromMatrixColumn(camera.matrixWorld, 0).normalize()
+      _up.setFromMatrixColumn(camera.matrixWorld, 1).normalize()
       // Applied only to the render-facing position, never to _easedPos —
       // next frame starts fresh from _easedPos, so this can't compound.
       camera.position.addScaledVector(_right, MOBILE_CAMERA_SHIFT)
+      camera.position.addScaledVector(_up, -MOBILE_CAMERA_VERTICAL_SHIFT)
     } else {
       camera.updateMatrixWorld(true) // keep matrixWorld fresh on desktop too, for the same reason
     }

@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { detourState, exitPileDetour, focusState, useLenis } from './lib/scroll'
 import { Scene } from './scene/Scene'
 import { Hud } from './ui/Hud'
+import { LoadingScreen } from './ui/LoadingScreen'
 import { BANNER_ANCHOR, JUMP_ANCHOR } from './ui/WorldContent'
 
 /**
@@ -58,6 +59,8 @@ export default function App() {
       </div>
 
       <Hud />
+
+      <LoadingScreen />
 
       {/* SVG refraction filter for the liquid glass — a smooth, low-frequency noise
           field (blurred so it has no static/grain) drives a gentle displacement of

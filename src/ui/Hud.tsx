@@ -125,9 +125,6 @@ export function Hud() {
 
       {/* top-right: current world */}
       <div className="absolute right-4 top-4 max-w-[45vw] text-right sm:right-8 sm:top-8 sm:max-w-none">
-        <div className="font-mono text-[10px] tracking-[0.3em] text-[#e8e0cf]/40 sm:text-xs">
-          {active.index} / {String(WORLDS.length - 1).padStart(2, '0')}
-        </div>
         <div
           className="font-mono text-sm leading-tight tracking-[0.2em] transition-colors sm:text-xl sm:leading-normal sm:tracking-[0.25em]"
           style={{ color: active.accent }}

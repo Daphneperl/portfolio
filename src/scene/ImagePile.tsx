@@ -7,43 +7,86 @@ import { PILE_CENTER } from './curve'
 
 // Every scanned sketchbook page (public/items/sketchbook), each with its own
 // real width/height ratio so it doesn't stretch/crop lying in the pile.
-// sketch-22/23 are "Copy Subject" cutouts (real alpha channel, transparent
-// background) rather than plain flat scans — PNG instead of JPEG, and their
-// material needs transparent:true or the cutout edge shows as a solid block
-// instead of fading into the pile behind it. Four other source files
-// (IMG_2548.jpeg + three more Subject*.png) turned out to be re-photographed/
-// "Copy Subject" duplicates of pages already covered by sketch-06, -10, -17,
-// -18 — left out rather than showing the same page twice.
+// sketch-24, -28, -31..-35 are "Copy Subject" cutouts (real alpha channel,
+// transparent background) rather than plain flat scans — PNG instead of JPEG,
+// and their material needs transparent:true or the cutout edge shows as a
+// solid block instead of fading into the pile behind it.
 const SKETCH_FILES = [
-  ...Array.from({ length: 21 }, (_, i) => `sketch-${String(i + 1).padStart(2, '0')}.jpg`),
-  'sketch-22.png',
-  'sketch-23.png',
+  ...Array.from({ length: 23 }, (_, i) => `sketch-${String(i + 1).padStart(2, '0')}.jpg`),
+  'sketch-24.png',
+  'sketch-25.jpg',
+  'sketch-26.jpg',
+  'sketch-27.jpg',
+  'sketch-28.png',
+  'sketch-29.jpg',
+  'sketch-30.jpg',
+  'sketch-31.png',
+  'sketch-32.png',
+  'sketch-33.png',
+  'sketch-34.png',
+  'sketch-35.png',
 ]
 const SKETCH_ASPECT: Record<string, number> = {
-  'sketch-01.jpg': 0.52,
-  'sketch-02.jpg': 1.0,
-  'sketch-03.jpg': 0.9783,
-  'sketch-04.jpg': 0.8,
-  'sketch-05.jpg': 0.7124,
-  'sketch-06.jpg': 0.6936,
-  'sketch-07.jpg': 0.697,
-  'sketch-08.jpg': 0.75,
-  'sketch-09.jpg': 0.6937,
-  'sketch-10.jpg': 0.6895,
-  'sketch-11.jpg': 1.093,
-  'sketch-12.jpg': 0.9701,
-  'sketch-13.jpg': 1.0,
-  'sketch-14.jpg': 0.9989,
-  'sketch-15.jpg': 1.1707,
-  'sketch-16.jpg': 0.7254,
-  'sketch-17.jpg': 1.0,
-  'sketch-18.jpg': 1.0729,
-  'sketch-19.jpg': 0.975,
-  'sketch-20.jpg': 0.7059,
-  'sketch-21.jpg': 0.9787,
-  'sketch-22.png': 0.9986,
-  'sketch-23.png': 0.7535,
+  'sketch-01.jpg': 1.3571,
+  'sketch-02.jpg': 0.52,
+  'sketch-03.jpg': 0.4331,
+  'sketch-04.jpg': 1.0,
+  'sketch-05.jpg': 0.9783,
+  'sketch-06.jpg': 1.3311,
+  'sketch-07.jpg': 1.025,
+  'sketch-08.jpg': 0.8,
+  'sketch-09.jpg': 0.7124,
+  'sketch-10.jpg': 0.6937,
+  'sketch-11.jpg': 0.697,
+  'sketch-12.jpg': 0.75,
+  'sketch-13.jpg': 1.0492,
+  'sketch-14.jpg': 1.027,
+  'sketch-15.jpg': 0.6937,
+  'sketch-16.jpg': 0.6895,
+  'sketch-17.jpg': 1.093,
+  'sketch-18.jpg': 0.9701,
+  'sketch-19.jpg': 1.0,
+  'sketch-20.jpg': 0.9989,
+  'sketch-21.jpg': 0.7254,
+  'sketch-22.jpg': 1.4047,
+  'sketch-23.jpg': 1.0458,
+  'sketch-24.png': 1.0,
+  'sketch-25.jpg': 0.975,
+  'sketch-26.jpg': 1.3289,
+  'sketch-27.jpg': 0.7059,
+  'sketch-28.png': 0.97,
+  'sketch-29.jpg': 0.9787,
+  'sketch-30.jpg': 0.7238,
+  'sketch-31.png': 0.9986,
+  'sketch-32.png': 0.9971,
+  'sketch-33.png': 0.7529,
+  'sketch-34.png': 0.705,
+  'sketch-35.png': 0.9907,
 }
+
+// Soft drop-shadow blob, shared by every page — a single blurred rounded-rect
+// drawn once to a canvas, not loaded per-instance. Stretched under each page
+// (via plane geometry, not the texture itself) so its feathered edge scales
+// with that page's own aspect ratio, same trick .edge-fade's CSS mask uses.
+let _shadowTexture: THREE.CanvasTexture | null = null
+function getShadowTexture(): THREE.CanvasTexture {
+  if (_shadowTexture) return _shadowTexture
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  const inset = 46
+  ctx.filter = 'blur(26px)'
+  ctx.fillStyle = '#000'
+  ctx.beginPath()
+  ctx.roundRect(inset, inset, size - inset * 2, size - inset * 2, 22)
+  ctx.fill()
+  _shadowTexture = new THREE.CanvasTexture(canvas)
+  return _shadowTexture
+}
+const SHADOW_SCALE = 1.2 // a bit larger than the page so the blur isn't clipped at its own edge
+const SHADOW_OFFSET = 5 // world units, down + right of the page — "light from top-left"
 
 const PILE_SCATTER_RADIUS = 85 // how far from centre pages can land, in world units
 const PILE_BASE_SIZE = 68 // long-edge size of a page, world units
@@ -67,10 +110,18 @@ interface PlacedSketch {
   size: number
 }
 
-/** Deterministic-but-scattered placement — varies by index, not Math.random,
- * so the pile looks the same every visit rather than reshuffling on remount. */
+/** Shuffled once per visit (Math.random(), Fisher-Yates) so which page lands
+ * in which slot is different every time you open the pile — but the SLOTS
+ * themselves still come from the same tuned golden-angle scatter/jitter
+ * formula, keyed off the shuffled position rather than the file's fixed index,
+ * so the pile's overall shape/spread never changes, only who's where in it. */
 function placeSketches(): PlacedSketch[] {
-  return SKETCH_FILES.map((file, i) => {
+  const shuffled = [...SKETCH_FILES]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled.map((file, i) => {
     const angle = i * 2.399963 // golden-angle spread, same trick as FloatingItems
     const r = PILE_SCATTER_RADIUS * (0.15 + ((i * 53) % 100) / 120)
     return {
@@ -96,8 +147,10 @@ function placeSketches(): PlacedSketch[] {
  * held up in front of you), not the world-horizontal "table" a lying-flat
  * version would use. A double tap/click toggles "bring to front": pulls it
  * partway toward the camera and scales it up, eased in over a few frames;
- * doing it again (or dragging it away) returns it to wherever it was
- * beforehand. Detected manually off pointerdown timing (see toggleEnlarge/
+ * doing it again returns it to wherever it was beforehand — still draggable
+ * while enlarged (moves the enlarged page around without shrinking it back),
+ * only another double-tap actually restores it. Detected manually off
+ * pointerdown timing (see toggleEnlarge/
  * onPointerDown below) rather than the browser's native 'dblclick' — that
  * event doesn't fire reliably for a touch double-tap, so one mechanism
  * drives both mouse and touch identically. Only interactive once the pile is
@@ -106,6 +159,7 @@ function placeSketches(): PlacedSketch[] {
  * it. */
 function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
   const { camera, gl } = useThree()
+  const shadowTex = useMemo(getShadowTexture, [])
   const groupRef = useRef<THREE.Group>(null)
   const draggingRef = useRef(false)
   const dragPlane = useRef(new THREE.Plane())
@@ -137,9 +191,18 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
   // restores from the correct spot instead of fighting the drag on release).
   const targetPos = useRef(new THREE.Vector3(s.x, s.y, s.z))
   const targetScale = useRef(1)
+  // Exactly two states, both computed fresh from this ONE fixed anchor every
+  // toggle — never from group's current (possibly still-animating, or
+  // already-enlarged) position/scale. That drift is what let repeated
+  // double-taps compound into "even bigger" instead of alternating cleanly:
+  // capturing "restore" from wherever the group currently was let an
+  // in-flight enlarge, or a drag performed while enlarged, get baked in as
+  // the new "normal" state. homePos is the page's one true resting spot —
+  // updated only by a genuine drag (see endDrag), which also always drops it
+  // back into the normal (unenlarged) state, so there's never a third,
+  // in-between state to drift through.
+  const homePos = useRef(new THREE.Vector3(s.x, s.y, s.z))
   const enlargedRef = useRef(false)
-  const restorePos = useRef(new THREE.Vector3(s.x, s.y, s.z))
-  const restoreScale = useRef(1)
 
   useFrame(() => {
     const group = groupRef.current
@@ -180,26 +243,24 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
     // fire this, and resetting here would stop onDoubleClick below from ever
     // seeing enlargedRef as true.
     if (movedRef.current <= PILE_CLICK_THRESHOLD) return
-    enlargedRef.current = false
+    // Dragging an ENLARGED page just relocates it — still held up close,
+    // still full scale, still toggled off by another double-tap back to its
+    // real pile spot. So home (the un-enlarged resting position) and scale
+    // are only ever touched by a drag that started at rest.
+    if (enlargedRef.current) return
     const group = groupRef.current
-    if (group) {
-      restorePos.current.copy(group.position)
-      restoreScale.current = group.scale.x
-    }
+    if (group) homePos.current.copy(group.position)
   }
   const toggleEnlarge = () => {
-    const group = groupRef.current
-    if (!group) return
-    if (!enlargedRef.current) {
-      restorePos.current.copy(group.position)
-      restoreScale.current = group.scale.x
-      targetPos.current.copy(group.position).lerp(camera.position, PILE_ENLARGE_LERP_TO_CAMERA)
+    if (!groupRef.current) return
+    enlargedRef.current = !enlargedRef.current
+    if (enlargedRef.current) {
+      targetPos.current.copy(homePos.current).lerp(camera.position, PILE_ENLARGE_LERP_TO_CAMERA)
       targetScale.current = PILE_ENLARGE_SCALE
     } else {
-      targetPos.current.copy(restorePos.current)
-      targetScale.current = restoreScale.current
+      targetPos.current.copy(homePos.current)
+      targetScale.current = 1
     }
-    enlargedRef.current = !enlargedRef.current
   }
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (!detourState.active) return
@@ -207,7 +268,8 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
     const now = performance.now()
     const sinceLastTap = now - lastTapTime.current
     const tapDist = Math.hypot(e.clientX - lastTapPos.current.x, e.clientY - lastTapPos.current.y)
-    if (sinceLastTap < DOUBLE_TAP_MS && tapDist < DOUBLE_TAP_DIST) {
+    const isDoubleTap = sinceLastTap < DOUBLE_TAP_MS && tapDist < DOUBLE_TAP_DIST
+    if (isDoubleTap) {
       toggleEnlarge()
       lastTapTime.current = 0 // consumed — a third rapid tap starts a fresh pair, not another double
     } else {
@@ -228,6 +290,16 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
     // fires pointercancel if it picked pan/zoom, so setting it after the
     // pointerdown already fired never arrives in time.)
     e.nativeEvent.preventDefault()
+
+    // The tap that just completed a double-tap doesn't also start a drag —
+    // toggleEnlarge() above already did its job for this press. Dragging
+    // itself is now allowed from EITHER state: at rest (relocates + rebases
+    // home on release, see endDrag) or enlarged (just relocates the enlarged
+    // page — see endDrag's enlargedRef branch, which leaves home/scale alone
+    // so it's still exactly where it was, still full size, and another
+    // double-tap still shrinks it back to its real pile spot).
+    if (isDoubleTap) return
+
     const group = groupRef.current
     if (!group) return
     draggingRef.current = true
@@ -238,8 +310,13 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
     if (e.ray.intersectPlane(dragPlane.current, hitPoint.current)) {
       dragOffset.current.copy(group.position).sub(hitPoint.current)
     }
-    group.position.y += PILE_LIFT // pop above the rest of the pile while it's "picked up"
-    targetPos.current.copy(group.position)
+    // The "picked up" pop only makes sense from the flat resting pile — an
+    // already-enlarged page is already pulled forward, so skip the extra
+    // nudge and let the drag itself take over from wherever it currently is.
+    if (!enlargedRef.current) {
+      group.position.y += PILE_LIFT
+      targetPos.current.copy(group.position)
+    }
 
     const onMove = (ev: PointerEvent) => {
       ev.preventDefault()
@@ -259,6 +336,24 @@ function SketchPage({ tex, s }: { tex: THREE.Texture; s: PlacedSketch }) {
   return (
     <group ref={groupRef} position={[s.x, s.y, s.z]}>
       <Billboard>
+        {/* Soft drop shadow, behind and slightly offset from the page itself —
+            purely decorative, so it's excluded from raycasting (no onPointerDown)
+            and never writes depth, matching the page's own transparent pages. */}
+        <mesh
+          position={[SHADOW_OFFSET, -SHADOW_OFFSET, -1.5]}
+          rotation={[0, 0, s.roll]}
+          raycast={() => null}
+        >
+          <planeGeometry args={[s.size * s.aspect * SHADOW_SCALE, s.size * SHADOW_SCALE]} />
+          <meshBasicMaterial
+            map={shadowTex}
+            transparent
+            opacity={0.6}
+            depthWrite={false}
+            toneMapped={false}
+            fog={false}
+          />
+        </mesh>
         <mesh rotation={[0, 0, s.roll]} onPointerDown={onPointerDown}>
           <planeGeometry args={[s.size * s.aspect, s.size]} />
           <meshBasicMaterial
@@ -304,13 +399,23 @@ function useTouchActionForDrag() {
  * but always faces the camera dead-on, independently draggable. */
 export function ImagePile() {
   const textures = useTexture(SKETCH_FILES.map((f) => `/items/sketchbook/${f}`))
+  // Keyed by filename, not array index — placed is shuffled per visit (see
+  // placeSketches), but textures always loads in SKETCH_FILES' fixed order, so
+  // textures[i] for the i-th SHUFFLED slot was pairing each page with a
+  // random other page's texture (right aspect, wrong image — or rather, the
+  // reverse: the image showing through a differently-aspected plane, which is
+  // what read as "weird ratios").
+  const texByFile = useMemo(
+    () => new Map(SKETCH_FILES.map((f, i) => [f, textures[i] as THREE.Texture])),
+    [textures],
+  )
   const placed = useMemo(placeSketches, [])
   useTouchActionForDrag()
 
   return (
     <group position={PILE_CENTER}>
-      {placed.map((s, i) => (
-        <SketchPage key={s.file} tex={textures[i] as THREE.Texture} s={s} />
+      {placed.map((s) => (
+        <SketchPage key={s.file} tex={texByFile.get(s.file) as THREE.Texture} s={s} />
       ))}
     </group>
   )

@@ -31,6 +31,8 @@ export interface WorldContent {
       title?: string
       /** gif aspect ratio "w / h" so the window fits it without cropping */
       aspect?: string
+      /** small gifs that drift/bob around the project window (desktop only) */
+      floaters?: string[]
     }[]
     /** papers shown as a sorted 2-row grid a few scrolls behind the banner */
     papers?: {
@@ -90,6 +92,14 @@ export const CONTENT: Record<WorldId, WorldContent> = {
           href: 'https://in-silico.vercel.app/',
           gif: '/in-silico.gif',
           aspect: '800 / 416',
+          floaters: [
+            '/items/in-silico-gifs/bac1_1.gif',
+            '/items/in-silico-gifs/bac1_3.gif',
+            '/items/in-silico-gifs/bac2_4.gif',
+            '/items/in-silico-gifs/bac3_1.gif',
+            '/items/in-silico-gifs/bac4_3.gif',
+            '/items/in-silico-gifs/bac5_4.gif',
+          ],
         },
       ],
     },
@@ -100,9 +110,9 @@ export const CONTENT: Record<WorldId, WorldContent> = {
     intro: {
       heading: 'Scientific Graphics',
       lines: [
-        'Figures & data viz for micro/neurobiology papers.',
-        'Interactive microbiology art exhibition, BGU.',
-        'First-author review, Annual Review of Animal Biosciences.',
+        "I've got dual masters degrees, in biology and design.",
+        'During my years in research I offered graphic services to labs around the world.',
+        'I loved when multiple passions of mine find a single home.',
       ],
       // Rendered as a sorted-by-year 2x5 grid — see WorldContent's PapersGrid.
       papers: [
